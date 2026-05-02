@@ -1,4 +1,6 @@
-﻿if (typeof globalThis.crypto === 'undefined') { globalThis.crypto = require('crypto'); }
+﻿const { webcrypto } = require('crypto');
+if (!globalThis.crypto) globalThis.crypto = webcrypto;
+
 // Deploy: 2026-05-03 00:09:50
 /**
  * PixoGram API â€” Express Server Entry Point
@@ -148,6 +150,7 @@ if (require.main === module) {
 }
 
 module.exports = app;
+
 
 
 
