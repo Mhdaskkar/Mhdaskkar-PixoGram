@@ -55,9 +55,9 @@ jobs:
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
-      - name: Build and push Docker image
+      -- name: Build and push Docker image
         working-directory: ./backend
         run: |
           IMAGE=${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}
-          docker build -t $IMAGE:latest .
+          docker build --no-cache -t $IMAGE:latest .
           docker push $IMAGE:latest
