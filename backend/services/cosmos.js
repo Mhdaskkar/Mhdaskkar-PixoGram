@@ -33,10 +33,10 @@ function getContainers() {
   if (!_containers) {
     const db = getDb();
     _containers = {
-      photos:   db.container('photos'),    // partitionKey: /id
-      comments: db.container('comments'),  // partitionKey: /photoId
-      ratings:  db.container('ratings'),   // partitionKey: /photoId
-      users:    db.container('users'),     // partitionKey: /id
+      Photos:   db.container('Photos'),    // partitionKey: /id
+      Comments: db.container('Comments'),  // partitionKey: /photoId
+      Ratings:  db.container('Ratings'),   // partitionKey: /photoId
+      Users:    db.container('Users'),     // partitionKey: /id
     };
   }
   return _containers;

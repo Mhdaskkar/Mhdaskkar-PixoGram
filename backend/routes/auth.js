@@ -35,7 +35,7 @@ router.post('/register',
       const { email, password, displayName, role = 'consumer' } = req.body;
 
       // Check if user already exists
-      const { resources } = await cosmos.containers.users.items
+      const { resources } = await cosmos.containers.Users.items
        .query({ query: 'SELECT * FROM c WHERE c.email = @email', parameters: [{ name: '@email', value: email }] })
        .fetchAll();
 
@@ -57,7 +57,7 @@ router.post('/register',
         updatedAt:    now,
       };
 
-      await cosmos.containers.users.items.create(newUser);
+      await cosmos.containers.Users.items.create(newUser);
 
       const token = signToken({ sub: userId, email, displayName: newUser.displayName, role });
 
@@ -83,7 +83,7 @@ router.post('/login',
     try {
       const { email, password } = req.body;
 
-      const { resources } = await cosmos.container('Users').items
+      const { resources } = await cosmos.containers.Users.items
         .query({ query: 'SELECT * FROM c WHERE c.email = @email', parameters: [{ name: '@email', value: email }] })
         .fetchAll();
 
@@ -140,3 +140,4 @@ router.get('/profile', requireAuth, attachUserInfo, (req, res) => {
 });
 
 module.exports = router;
+
