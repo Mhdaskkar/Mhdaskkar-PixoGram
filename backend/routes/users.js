@@ -40,7 +40,7 @@ router.get('/:id',
       }
 
       // Fetch from Cosmos
-      const user = await cosmos.containers.users.item(id, id).read();
+      const user = await cosmos.containers.Users.item(id, id).read();
       if (!user.resource) {
         return res.status(404).json({ error: 'User not found' });
       }
@@ -84,10 +84,10 @@ router.patch('/:id',
         updatedAt: new Date().toISOString(),
       };
 
-      const user = await cosmos.containers.users.item(id, id).read();
+      const user = await cosmos.containers.Users.item(id, id).read();
       const updated = { ...user.resource, ...updates };
 
-      await cosmos.containers.users.item(id, id).replace(updated);
+      await cosmos.containers.Users.item(id, id).replace(updated);
 
       // Invalidate cache
       await redis.del(`user:${id}`);
@@ -112,13 +112,13 @@ router.get('/:id/photos',
       const { limit = 20, offset = 0 } = req.query;
 
       // Check user exists
-      const user = await cosmos.containers.users.item(id, id).read();
+      const user = await cosmos.containers.Users.item(id, id).read();
       if (!user.resource) {
         return res.status(404).json({ error: 'User not found' });
       }
 
       // Query photos by creator
-      const { resources } = await cosmos.containers.photos.items
+      const { resources } = await cosmos.containers.Photos.items
         .query(`SELECT * FROM c WHERE c.creatorId = @id ORDER BY c.createdAt DESC OFFSET @offset LIMIT @limit`, {
           parameters: [
             { name: '@id', value: id },
@@ -156,7 +156,7 @@ router.get('/:id/stats',
       }
 
       // Count photos
-      const photosResult = await cosmos.containers.photos.items
+      const photosResult = await cosmos.containers.Photos.items
         .query('SELECT COUNT(c.id) as count FROM c WHERE c.creatorId = @id', {
           parameters: [{ name: '@id', value: id }],
         })
@@ -165,7 +165,7 @@ router.get('/:id/stats',
       const photoCount = photosResult.resources[0]?.count || 0;
 
       // Count comments
-      const commentsResult = await cosmos.container('Comments').items
+      const commentsResult = await cosmos.containers.Comments.items
         .query('SELECT COUNT(c.id) as count FROM c WHERE c.userId = @id', {
           parameters: [{ name: '@id', value: id }],
         })
@@ -191,3 +191,4 @@ router.get('/:id/stats',
 );
 
 module.exports = router;
+
