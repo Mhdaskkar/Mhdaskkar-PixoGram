@@ -1,5 +1,5 @@
-# Multi-stage build for optimized image
-FROM node:18-alpine AS builder
+﻿# Multi-stage build for optimized image
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -11,7 +11,7 @@ RUN npm ci --only=production && \
     npm cache clean --force
 
 # Final stage
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
@@ -37,3 +37,4 @@ EXPOSE 3000
 
 # Start application
 CMD ["node", "server.js"]
+
