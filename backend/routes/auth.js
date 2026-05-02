@@ -35,9 +35,9 @@ router.post('/register',
       const { email, password, displayName, role = 'consumer' } = req.body;
 
       // Check if user already exists
-      const { resources } = await cosmos.container('Users').items
-        .query({ query: 'SELECT * FROM c WHERE c.email = @email', parameters: [{ name: '@email', value: email }] })
-        .fetchAll();
+      const { resources } = await cosmos.containers.users.items
+       .query({ query: 'SELECT * FROM c WHERE c.email = @email', parameters: [{ name: '@email', value: email }] })
+       .fetchAll();
 
       if (resources.length > 0) {
         return res.status(409).json({ error: 'Email already registered.' });
@@ -57,7 +57,7 @@ router.post('/register',
         updatedAt:    now,
       };
 
-      await cosmos.container('Users').items.create(newUser);
+      await cosmos.containers.users.items.create(newUser);
 
       const token = signToken({ sub: userId, email, displayName: newUser.displayName, role });
 

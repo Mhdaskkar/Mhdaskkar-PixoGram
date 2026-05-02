@@ -40,7 +40,7 @@ router.get('/:id',
       }
 
       // Fetch from Cosmos
-      const user = await cosmos.container('Users').item(id, id).read();
+      const user = await cosmos.containers.users.item(id, id).read();
       if (!user.resource) {
         return res.status(404).json({ error: 'User not found' });
       }
@@ -84,10 +84,10 @@ router.patch('/:id',
         updatedAt: new Date().toISOString(),
       };
 
-      const user = await cosmos.container('Users').item(id, id).read();
+      const user = await cosmos.containers.users.item(id, id).read();
       const updated = { ...user.resource, ...updates };
 
-      await cosmos.container('Users').item(id, id).replace(updated);
+      await cosmos.containers.users.item(id, id).replace(updated);
 
       // Invalidate cache
       await redis.del(`user:${id}`);
@@ -112,13 +112,13 @@ router.get('/:id/photos',
       const { limit = 20, offset = 0 } = req.query;
 
       // Check user exists
-      const user = await cosmos.container('Users').item(id, id).read();
+      const user = await cosmos.containers.users.item(id, id).read();
       if (!user.resource) {
         return res.status(404).json({ error: 'User not found' });
       }
 
       // Query photos by creator
-      const { resources } = await cosmos.container('Photos').items
+      const { resources } = await cosmos.containers.photos.items
         .query(`SELECT * FROM c WHERE c.creatorId = @id ORDER BY c.createdAt DESC OFFSET @offset LIMIT @limit`, {
           parameters: [
             { name: '@id', value: id },
@@ -156,7 +156,7 @@ router.get('/:id/stats',
       }
 
       // Count photos
-      const photosResult = await cosmos.container('Photos').items
+      const photosResult = await cosmos.containers.photos.items
         .query('SELECT COUNT(c.id) as count FROM c WHERE c.creatorId = @id', {
           parameters: [{ name: '@id', value: id }],
         })
