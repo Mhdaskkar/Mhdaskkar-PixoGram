@@ -1,15 +1,15 @@
-/**
- * Auth Routes — Local JWT Authentication
- * POST /v1/auth/register  — create account, returns JWT
- * POST /v1/auth/login     — verify credentials, returns JWT
- * POST /v1/auth/refresh   — issue new token from valid token
- * POST /v1/auth/logout    — client-side (stateless JWT)
- * GET  /v1/auth/profile   — get current user profile
+﻿/**
+ * Auth Routes â€” Local JWT Authentication
+ * POST /v1/auth/register  â€” create account, returns JWT
+ * POST /v1/auth/login     â€” verify credentials, returns JWT
+ * POST /v1/auth/refresh   â€” issue new token from valid token
+ * POST /v1/auth/logout    â€” client-side (stateless JWT)
+ * GET  /v1/auth/profile   â€” get current user profile
  */
 const express  = require('express');
 const router   = express.Router();
 const bcrypt   = require('bcryptjs');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 const { body, validationResult } = require('express-validator');
 
 const { requireAuth, attachUserInfo, signToken } = require('../middleware/auth');
@@ -44,7 +44,7 @@ router.post('/register',
       }
 
       const passwordHash = await bcrypt.hash(password, 12);
-      const userId = uuidv4();
+      const userId = randomUUID();
       const now = new Date().toISOString();
 
       const newUser = {
@@ -124,7 +124,7 @@ router.post('/refresh', requireAuth, attachUserInfo, (req, res) => {
 
 /**
  * POST /v1/auth/logout
- * JWTs are stateless — client must discard the token.
+ * JWTs are stateless â€” client must discard the token.
  * For full invalidation, add a Redis token-blocklist here.
  */
 router.post('/logout', (req, res) => {
@@ -140,4 +140,5 @@ router.get('/profile', requireAuth, attachUserInfo, (req, res) => {
 });
 
 module.exports = router;
+
 

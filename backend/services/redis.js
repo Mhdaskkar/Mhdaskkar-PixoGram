@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Azure Cache for Redis Service
  * Wraps ioredis with helper methods used across the API
  */
@@ -22,7 +22,7 @@ function getClient() {
     });
 
     _client.on('error', (err) => {
-      // Log but don't crash — app can function without cache (degraded)
+      // Log but don't crash â€” app can function without cache (degraded)
       if (process.env.NODE_ENV !== 'test') {
         console.warn('Redis error (non-fatal):', err.message);
       }
@@ -66,4 +66,13 @@ async function deletePattern(pattern) {
   } catch { /* non-fatal */ }
 }
 
-module.exports = { get, setex, del, ping, deletePattern, getClient };
+async function set(key, value, exFlag, ttl) {
+  try {
+    if (exFlag === 'EX' && ttl) {
+      await getClient().setex(key, ttl, value);
+    } else {
+      await getClient().set(key, value);
+    }
+  } catch { /* non-fatal */ }
+}
+module.exports = { get, set, setex, del, ping, deletePattern, getClient };

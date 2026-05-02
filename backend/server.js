@@ -1,5 +1,7 @@
+﻿const crypto = require('crypto');
+global.crypto = crypto;
 /**
- * PixoGram API — Express Server Entry Point
+ * PixoGram API â€” Express Server Entry Point
  * Azure Cloud-Native Photo Sharing Platform
  */
 
@@ -13,28 +15,28 @@ const morgan      = require('morgan');
 const compression = require('compression');
 const rateLimit   = require('express-rate-limit');
 
-// ── ROUTES ──
+// â”€â”€ ROUTES â”€â”€
 const photosRouter   = require('./routes/photos');
 const commentsRouter = require('./routes/comments');
 const ratingsRouter  = require('./routes/ratings');
 const usersRouter    = require('./routes/users');
 const authRouter     = require('./routes/auth');
 
-// ── MIDDLEWARE (FIXED: ONLY ONE IMPORT SOURCE) ──
+// â”€â”€ MIDDLEWARE (FIXED: ONLY ONE IMPORT SOURCE) â”€â”€
 const { errorHandler, requestLogger } = require('./middleware/errorhandler');
 
 const app  = express();
 const PORT = process.env.PORT || 3000;
 
-// ── TRUST PROXY (Azure App Service) ──
+// â”€â”€ TRUST PROXY (Azure App Service) â”€â”€
 app.set('trust proxy', 1);
 
-// ── SECURITY ──
+// â”€â”€ SECURITY â”€â”€
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' }
 }));
 
-// ── CORS ──
+// â”€â”€ CORS â”€â”€
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3001').split(',');
 
 app.use(cors({
@@ -47,7 +49,7 @@ app.use(cors({
   credentials: true,
 }));
 
-// ── RATE LIMITING ──
+// â”€â”€ RATE LIMITING â”€â”€
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 300,
@@ -58,20 +60,20 @@ const globalLimiter = rateLimit({
 
 app.use(globalLimiter);
 
-// ── BODY PARSING ──
+// â”€â”€ BODY PARSING â”€â”€
 app.use(compression());
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// ── LOGGING ──
+// â”€â”€ LOGGING â”€â”€
 if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('combined'));
 }
 
-// ✔ FIXED: only ONE requestLogger (no duplicate import)
+// âœ” FIXED: only ONE requestLogger (no duplicate import)
 app.use(requestLogger);
 
-// ── HEALTH CHECK ──
+// â”€â”€ HEALTH CHECK â”€â”€
 app.get('/health', (req, res) => {
   res.json({
     status: 'healthy',
@@ -81,7 +83,7 @@ app.get('/health', (req, res) => {
   });
 });
 
-// ── DEEP HEALTH CHECK ──
+// â”€â”€ DEEP HEALTH CHECK â”€â”€
 app.get('/health/deep', async (req, res) => {
   const checks = { api: 'ok', cosmos: 'unknown', redis: 'unknown', blob: 'unknown' };
 
@@ -109,7 +111,7 @@ app.get('/health/deep', async (req, res) => {
   });
 });
 
-// ── DEBUG LOG (optional) ──
+// â”€â”€ DEBUG LOG (optional) â”€â”€
 console.log({
   authRouter,
   usersRouter,
@@ -118,7 +120,7 @@ console.log({
   ratingsRouter
 });
 
-// ── API ROUTES ──
+// â”€â”€ API ROUTES â”€â”€
 app.use('/v1/auth',     authRouter);
 app.use('/v1/users',    usersRouter);
 app.use('/v1/photos',   photosRouter);
@@ -126,7 +128,7 @@ app.use('/v1/photos',   commentsRouter);
 app.use('/v1/photos',   ratingsRouter);
 app.use('/v1/comments', commentsRouter);
 
-// ── 404 HANDLER ──
+// â”€â”€ 404 HANDLER â”€â”€
 app.use((req, res) => {
   res.status(404).json({
     error: 'Not found',
@@ -134,10 +136,10 @@ app.use((req, res) => {
   });
 });
 
-// ── GLOBAL ERROR HANDLER ──
+// â”€â”€ GLOBAL ERROR HANDLER â”€â”€
 app.use(errorHandler);
 
-// ── START SERVER ──
+// â”€â”€ START SERVER â”€â”€
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`PixoGram API running on port ${PORT}`);
