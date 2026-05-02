@@ -1,7 +1,4 @@
-﻿// Deploy: 2026-05-03 00:17:08
-// Deploy: 2026-05-03 00:09:50
-const crypto = require('crypto');
-global.crypto = crypto;
+﻿// Deploy: 2026-05-03 00:09:50
 /**
  * PixoGram API â€” Express Server Entry Point
  * Azure Cloud-Native Photo Sharing Platform
@@ -150,5 +147,7 @@ if (require.main === module) {
 }
 
 module.exports = app;
+
+
 
 
