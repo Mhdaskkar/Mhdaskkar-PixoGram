@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PixoGram — Creator Studio</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg:        #0a0a0b;
+      --surface:   #111113;
+      --surface2:  #18181c;
+      --border:    rgba(255,255,255,0.07);
+      --border-h:  rgba(255,255,255,0.15);
+      --text:      #e8e6e3;
+      --muted:     #6b6a6f;
+      --accent:    #c9a96e;
+      --accent2:   #e8c88a;
+      --danger:    #e06060;
+      --success:   #6ec9a9;
+      --radius:    12px;
+      --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Grain overlay ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.4;
+    }
+
+    /* ── Header ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 40px;
+      border-bottom: 1px solid var(--border);
+      position: sticky; top: 0;
+      background: rgba(10,10,11,0.85);
+      backdrop-filter: blur(20px);
+      z-index: 100;
+      animation: slideDown 0.5s ease both;
+    }
+
+    @keyframes slideDown {
+      from { opacity:0; transform:translateY(-10px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    .logo {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 26px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      color: var(--accent2);
+    }
+    .logo span { color: var(--muted); font-weight: 300; }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .badge-creator {
+      background: rgba(201,169,110,0.12);
+      color: var(--accent);
+      border: 1px solid rgba(201,169,110,0.25);
+      border-radius: 20px;
+      padding: 4px 12px;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      font-weight: 500;
+    }
+
+    .avatar {
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), #8b5e3c);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 500;
+      cursor: pointer;
+      border: 2px solid var(--border-h);
+      transition: var(--transition);
+    }
+    .avatar:hover { border-color: var(--accent); }
+
+    /* ── Layout ── */
+    .app {
+      display: grid;
+      grid-template-columns: 260px 1fr 300px;
+      min-height: calc(100vh - 65px);
+      animation: fadeIn 0.6s ease 0.15s both;
+    }
+
+    @keyframes fadeIn {
+      from { opacity:0; transform:translateY(12px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    /* ── Sidebar ── */
+    .sidebar {
+      border-right: 1px solid var(--border);
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .sidebar-section-label {
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 16px 12px 8px;
+      font-weight: 500;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 13.5px;
+      transition: var(--transition);
+      border: 1px solid transparent;
+    }
+    .nav-item:hover {
+      background: var(--surface);
+      color: var(--text);
+      border-color: var(--border);
+    }
+    .nav-item.active {
+      background: rgba(201,169,110,0.1);
+      color: var(--accent2);
+      border-color: rgba(201,169,110,0.2);
+    }
+    .nav-item svg { flex-shrink: 0; }
+
+    .nav-divider { height: 1px; background: var(--border); margin: 12px 0; }
+
+    .storage-meter {
+      margin-top: auto;
+      padding: 16px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+    }
+    .storage-label {
+      display: flex; justify-content: space-between;
+      font-size: 12px; color: var(--muted);
+      margin-bottom: 10px;
+    }
+    .storage-bar-bg {
+      height: 4px;
+      background: var(--surface2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .storage-bar-fill {
+      height: 100%;
+      width: 38%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 2px;
+    }
+
+    /* ── Main ── */
+    main {
+      padding: 36px 40px;
+      overflow-y: auto;
+    }
+
+    .page-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 34px;
+      font-weight: 400;
+      letter-spacing: 0.01em;
+      margin-bottom: 4px;
+    }
+    .page-subtitle {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 32px;
+    }
+
+    /* ── Drop zone ── */
+    .drop-zone {
+      border: 2px dashed var(--border-h);
+      border-radius: 16px;
+      padding: 52px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      background: var(--surface);
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 32px;
+    }
+    .drop-zone::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at 50% 0%, rgba(201,169,110,0.05), transparent 70%);
+      pointer-events: none;
+    }
+    .drop-zone:hover,
+    .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(201,169,110,0.04);
+    }
+
+    .drop-icon {
+      width: 56px; height: 56px;
+      margin: 0 auto 16px;
+      background: rgba(201,169,110,0.1);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      border: 1px solid rgba(201,169,110,0.2);
+    }
+    .drop-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 20px;
+      font-weight: 500;
+      margin-bottom: 6px;
+    }
+    .drop-sub { color: var(--muted); font-size: 12.5px; line-height: 1.6; }
+    .drop-link { color: var(--accent); text-decoration: none; }
+    .drop-link:hover { text-decoration: underline; }
+
+    #fileInput { display: none; }
+
+    /* ── Preview strip ── */
+    .preview-strip {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 32px;
+    }
+
+    .preview-thumb {
+      position: relative;
+      width: 80px; height: 80px;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 2px solid var(--border);
+      flex-shrink: 0;
+      animation: popIn 0.3s ease both;
+    }
+    @keyframes popIn {
+      from { opacity:0; transform:scale(0.8); }
+      to   { opacity:1; transform:scale(1); }
+    }
+    .preview-thumb img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .preview-thumb .remove-btn {
+      position: absolute; top:4px; right:4px;
+      width:18px; height:18px;
+      background: rgba(0,0,0,0.75);
+      border: none; border-radius: 50%;
+      color: #fff; font-size: 10px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transition: var(--transition);
+    }
+    .preview-thumb:hover .remove-btn { opacity: 1; }
+
+    /* ── Form ── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 7px; }
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      font-size: 11.5px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      font-weight: 500;
+    }
+
+    input[type="text"],
+    input[type="date"],
+    textarea,
+    select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13.5px;
+      padding: 11px 14px;
+      transition: var(--transition);
+      outline: none;
+      width: 100%;
+      resize: none;
+    }
+    input[type="text"]:focus,
+    input[type="date"]:focus,
+    textarea:focus,
+    select:focus {
+      border-color: var(--accent);
+      background: rgba(201,169,110,0.03);
+    }
+    textarea { min-height: 90px; line-height: 1.6; }
+
+    /* Tags / people chips */
+    .tags-input-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 8px 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      cursor: text;
+      transition: var(--transition);
+    }
+    .tags-input-wrap:focus-within { border-color: var(--accent); }
+    .tag-chip {
+      background: rgba(201,169,110,0.12);
+      color: var(--accent2);
+      border: 1px solid rgba(201,169,110,0.22);
+      border-radius: 20px;
+      padding: 3px 10px 3px 10px;
+      font-size: 12px;
+      display: flex; align-items: center; gap: 5px;
+      animation: popIn 0.2s ease both;
+    }
+    .tag-chip button {
+      background: none; border: none;
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 13px;
+      line-height: 1;
+      padding: 0;
+    }
+    .tags-input-wrap input {
+      background: none; border: none;
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      outline: none;
+      padding: 2px 4px;
+      min-width: 100px;
+      flex: 1;
+    }
+
+    /* Visibility toggle */
+    .toggle-group {
+      display: flex;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .toggle-opt {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--muted);
+      transition: var(--transition);
+      background: var(--surface);
+    }
+    .toggle-opt.selected {
+      background: rgba(201,169,110,0.12);
+      color: var(--accent2);
+    }
+
+    /* Range input */
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 3px;
+      background: var(--surface2);
+      border-radius: 2px;
+      outline: none;
+      border: none;
+      padding: 0;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+    }
+
+    /* ── Actions ── */
+    .form-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn {
+      padding: 12px 24px;
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13.5px;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      transition: var(--transition);
+      display: flex; align-items: center; gap: 8px;
+      letter-spacing: 0.01em;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #1a1208;
+      flex: 1;
+      justify-content: center;
+    }
+    .btn-primary:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { color: var(--text); border-color: var(--border-h); }
+
+    .btn-draft {
+      background: var(--surface2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+    .btn-draft:hover { color: var(--text); border-color: var(--border-h); }
+
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+    /* Spinner */
+    .spinner {
+      width: 14px; height: 14px;
+      border: 2px solid rgba(26,18,8,0.3);
+      border-top-color: #1a1208;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Right panel ── */
+    .panel {
+      border-left: 1px solid var(--border);
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .panel-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 500;
+    }
+
+    .info-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+    .info-card-title {
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+      font-weight: 500;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 12.5px;
+    }
+    .info-row:last-child { border-bottom: none; }
+    .info-row span:first-child { color: var(--muted); }
+    .info-row .val { color: var(--text); font-weight: 500; }
+    .info-row .val.green { color: var(--success); }
+    .info-row .val.amber { color: var(--accent); }
+
+    .tip-box {
+      background: rgba(201,169,110,0.06);
+      border: 1px solid rgba(201,169,110,0.15);
+      border-radius: var(--radius);
+      padding: 14px;
+    }
+    .tip-box p {
+      font-size: 12.5px;
+      color: var(--muted);
+      line-height: 1.65;
+    }
+    .tip-box strong { color: var(--accent2); }
+
+    /* Recent uploads */
+    .recent-list { display: flex; flex-direction: column; gap: 10px; }
+    .recent-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .recent-item:hover { border-color: var(--border-h); }
+    .recent-thumb {
+      width: 44px; height: 44px;
+      border-radius: 7px;
+      background: var(--surface2);
+      flex-shrink: 0;
+      overflow: hidden;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .recent-thumb svg { color: var(--muted); }
+    .recent-info { flex: 1; min-width: 0; }
+    .recent-name {
+      font-size: 12.5px;
+      font-weight: 500;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .recent-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .recent-status {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      flex-shrink: 0;
+    }
+    .status-live { background: rgba(110,201,169,0.12); color: var(--success); border: 1px solid rgba(110,201,169,0.2); }
+    .status-draft { background: rgba(107,106,111,0.12); color: var(--muted); border: 1px solid var(--border); }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 28px; right: 28px;
+      background: var(--surface2);
+      border: 1px solid var(--border-h);
+      color: var(--text);
+      padding: 14px 20px;
+      border-radius: var(--radius);
+      font-size: 13.5px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      z-index: 500;
+      display: flex; align-items: center; gap: 10px;
+      transform: translateY(10px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    #toast .toast-icon { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    #toast .toast-icon.success { background: rgba(110,201,169,0.15); color: var(--success); }
+    #toast .toast-icon.error   { background: rgba(224,96,96,0.15); color: var(--danger); }
+
+    /* ── Progress bar ── */
+    #uploadProgress {
+      display: none;
+      margin-top: 16px;
+    }
+    #uploadProgress.visible { display: block; }
+    .progress-label {
+      display: flex; justify-content: space-between;
+      font-size: 12px; color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .progress-bg {
+      height: 4px;
+      background: var(--surface2);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    /* Char counter */
+    .char-count {
+      font-size: 11px;
+      color: var(--muted);
+      text-align: right;
+      margin-top: -4px;
+    }
+
+    /* Responsive */
+    @media (max-width: 1100px) {
+      .app { grid-template-columns: 220px 1fr; }
+      .panel { display: none; }
+    }
+    @media (max-width: 768px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      header { padding: 16px 20px; }
+      main { padding: 24px 20px; }
+      .form-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header ── -->
+<header>
+  <div class="logo">PixoGram </div>
+  <div class="header-right">
+    <span class="badge-creator">Creator</span>
+    <div class="avatar" title="Account settings"></div>
+  </div>
+</header>
+
+<!-- ── App ── -->
+<div class="app">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="sidebar-section-label">Creator Studio</div>
+
+    <div class="nav-item active">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Upload Photos
+    </div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      My Gallery
+    </div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      Albums
+    </div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+      Comments
+      <span style="margin-left:auto;background:rgba(201,169,110,0.15);color:var(--accent);font-size:10px;padding:1px 7px;border-radius:10px;font-weight:500;">3</span>
+    </div>
+
+    <div class="nav-divider"></div>
+    <div class="sidebar-section-label">Analytics</div>
+
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Insights
+    </div>
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/></svg>
+      Reach
+    </div>
+
+    <div class="nav-divider"></div>
+
+    <div class="nav-item">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+      Settings
+    </div>
+
+    <div class="storage-meter">
+      <div class="storage-label">
+        <span>Storage Used</span>
+        <span style="color:var(--accent)">1 GB / 10 GB</span>
+      </div>
+      <div class="storage-bar-bg">
+        <div class="storage-bar-fill"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Main content ── -->
+  <main>
+    <h1 class="page-title">Upload Photos</h1>
+    <p class="page-subtitle">Share your work with the Pixo community. Supported formats: JPG, PNG, WEBP, HEIC.</p>
+
+    <!-- Drop zone -->
+    <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+      <div class="drop-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      </div>
+      <div class="drop-title">Drop your photos here</div>
+      <p class="drop-sub">or <a class="drop-link" onclick="event.stopPropagation();document.getElementById('fileInput').click()">browse files</a> from your device<br><span style="font-size:11px;color:var(--muted)">JPG · PNG · WEBP · HEIC &nbsp;·&nbsp; Max 25 MB per file</span></p>
+      <input type="file" id="fileInput" accept="image/*" multiple />
+    </div>
+
+    <!-- Preview strip -->
+    <div class="preview-strip" id="previewStrip"></div>
+
+    <!-- Progress bar -->
+    <div id="uploadProgress">
+      <div class="progress-label">
+        <span id="progressLabel">Uploading to Azure Blob Storage…</span>
+        <span id="progressPct">0%</span>
+      </div>
+      <div class="progress-bg">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+    </div>
+
+    <!-- Metadata form -->
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Title *</label>
+        <input type="text" id="title" placeholder="Give your photo a compelling title" maxlength="100" oninput="updateCharCount(this,'titleCount',100)" />
+        <div class="char-count"><span id="titleCount">0</span> / 100</div>
+      </div>
+
+      <div class="form-group full">
+        <label>Caption</label>
+        <textarea id="caption" placeholder="Tell the story behind this photo…" maxlength="500" oninput="updateCharCount(this,'captionCount',500)"></textarea>
+        <div class="char-count"><span id="captionCount">0</span> / 500</div>
+      </div>
+
+      <div class="form-group">
+        <label>Location</label>
+        <input type="text" id="location" placeholder="e.g. London, UK" />
+      </div>
+
+      <div class="form-group">
+        <label>Date Taken</label>
+        <input type="date" id="dateTaken" />
+      </div>
+
+      <div class="form-group full">
+        <label>People Tagged</label>
+        <div class="tags-input-wrap" id="tagsWrap">
+          <input type="text" id="tagInput" placeholder="Type a name and press Enter…" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Category</label>
+        <select id="category">
+          <option value="">Select a category</option>
+          <option>Landscape</option>
+          <option>Portrait</option>
+          <option>Street</option>
+          <option>Architecture</option>
+          <option>Nature</option>
+          <option>Travel</option>
+          <option>Abstract</option>
+          <option>Events</option>
+          <option>Food</option>
+          <option>Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Visibility</label>
+        <div class="toggle-group">
+          <div class="toggle-opt selected" data-val="public" onclick="selectVisibility(this)">
+            🌐 Public
+          </div>
+          <div class="toggle-opt" data-val="followers" onclick="selectVisibility(this)">
+            👥 Followers
+          </div>
+          <div class="toggle-opt" data-val="private" onclick="selectVisibility(this)">
+            🔒 Private
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group full">
+        <label>Alt Text <span style="color:var(--muted);font-size:10px;text-transform:none;letter-spacing:0">(for accessibility)</span></label>
+        <input type="text" id="altText" placeholder="Describe the image for screen readers" />
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="resetForm()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>
+        Reset
+      </button>
+      <button class="btn btn-draft" onclick="saveDraft()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Save Draft
+      </button>
+      <button class="btn btn-primary" id="publishBtn" onclick="publishPhoto()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Publish
+      </button>
+    </div>
+  </main>
+
+  <!-- ── Right panel ── -->
+  <aside class="panel">
+    <h2 class="panel-title">Upload Details</h2>
+
+    <div class="info-card">
+      <div class="info-card-title">Current Session</div>
+      <div class="info-row">
+        <span>Files selected</span>
+        <span class="val" id="panelFileCount">0</span>
+      </div>
+      <div class="info-row">
+        <span>Total size</span>
+        <span class="val" id="panelFileSize">—</span>
+      </div>
+      <div class="info-row">
+        <span>Status</span>
+        <span class="val amber" id="panelStatus">Ready</span>
+      </div>
+    </div>
+
+    <div class="tip-box">
+      <p><strong>Azure Storage Tip</strong><br>Files are stored in Azure Blob Storage and served via Azure CDN for low-latency delivery worldwide.</p>
+    </div>
+
+    <div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:16px;font-weight:500;margin-bottom:14px;">Recent Uploads</div>
+      <div class="recent-list" id="recentList">
+        <div class="recent-item">
+          <div class="recent-thumb">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <div class="recent-info">
+            <div class="recent-name">Golden Hour Rooftop</div>
+            <div class="recent-meta">2 hrs ago · 4.2 MB</div>
+          </div>
+          <span class="recent-status status-live">Live</span>
+        </div>
+        <div class="recent-item">
+          <div class="recent-thumb">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <div class="recent-info">
+            <div class="recent-name">City Fog Series #3</div>
+            <div class="recent-meta">Yesterday · 6.1 MB</div>
+          </div>
+          <span class="recent-status status-draft">Draft</span>
+        </div>
+        <div class="recent-item">
+          <div class="recent-thumb">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          </div>
+          <div class="recent-info">
+            <div class="recent-name">Thames at Dusk</div>
+            <div class="recent-meta">3 days ago · 5.7 MB</div>
+          </div>
+          <span class="recent-status status-live">Live</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+</div>
+
+<!-- Toast -->
+<div id="toast">
+  <div class="toast-icon" id="toastIcon">✓</div>
+  <span id="toastMsg">Done!</span>
+</div>
+
+<script>
+  /* ── File handling ── */
+  let selectedFiles = [];
+  let visibility = 'public';
+
+  const dropZone  = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const strip     = document.getElementById('previewStrip');
+
+  dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+  dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+  dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('drag-over');
+    handleFiles([...e.dataTransfer.files]);
+  });
+
+  fileInput.addEventListener('change', () => handleFiles([...fileInput.files]));
+
+  function handleFiles(files) {
+    files.forEach(file => {
+      if (!file.type.startsWith('image/')) return;
+      selectedFiles.push(file);
+      const reader = new FileReader();
+      reader.onload = ev => addThumb(ev.target.result, selectedFiles.length - 1);
+      reader.readAsDataURL(file);
+    });
+    updatePanel();
+  }
+
+  function addThumb(src, idx) {
+    const thumb = document.createElement('div');
+    thumb.className = 'preview-thumb';
+    thumb.dataset.idx = idx;
+    thumb.innerHTML = `<img src="${src}" alt="preview" /><button class="remove-btn" onclick="removeFile(event,${idx})">✕</button>`;
+    strip.appendChild(thumb);
+  }
+
+  function removeFile(e, idx) {
+    e.stopPropagation();
+    selectedFiles[idx] = null;
+    e.target.closest('.preview-thumb').remove();
+    updatePanel();
+  }
+
+  function updatePanel() {
+    const valid = selectedFiles.filter(Boolean);
+    document.getElementById('panelFileCount').textContent = valid.length;
+    const totalBytes = valid.reduce((s, f) => s + f.size, 0);
+    document.getElementById('panelFileSize').textContent = totalBytes > 0 ? formatBytes(totalBytes) : '—';
+  }
+
+  function formatBytes(b) {
+    if (b < 1024) return b + ' B';
+    if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+    return (b/1048576).toFixed(1) + ' MB';
+  }
+
+  /* ── Tags ── */
+  const tagInput = document.getElementById('tagInput');
+  let tags = [];
+
+  tagInput.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ',') && tagInput.value.trim()) {
+      e.preventDefault();
+      addTag(tagInput.value.trim());
+      tagInput.value = '';
+    } else if (e.key === 'Backspace' && !tagInput.value && tags.length) {
+      removeTag(tags.length - 1);
+    }
+  });
+
+  function addTag(name) {
+    if (tags.includes(name)) return;
+    tags.push(name);
+    const chip = document.createElement('div');
+    chip.className = 'tag-chip';
+    chip.dataset.name = name;
+    chip.innerHTML = `${name}<button onclick="removeTag('${name}')">×</button>`;
+    document.getElementById('tagsWrap').insertBefore(chip, tagInput);
+  }
+
+  function removeTag(nameOrIdx) {
+    const name = typeof nameOrIdx === 'number' ? tags[nameOrIdx] : nameOrIdx;
+    tags = tags.filter(t => t !== name);
+    document.querySelectorAll('.tag-chip').forEach(c => { if (c.dataset.name === name) c.remove(); });
+  }
+
+  /* ── Visibility ── */
+  function selectVisibility(el) {
+    document.querySelectorAll('.toggle-opt').forEach(o => o.classList.remove('selected'));
+    el.classList.add('selected');
+    visibility = el.dataset.val;
+  }
+
+  /* ── Char counter ── */
+  function updateCharCount(el, counterId, max) {
+    document.getElementById(counterId).textContent = el.value.length;
+  }
+
+  /* ── Publish ── */
+  function publishPhoto() {
+    const title = document.getElementById('title').value.trim();
+    const validFiles = selectedFiles.filter(Boolean);
+
+    if (!validFiles.length) { showToast('Please select at least one photo.', 'error'); return; }
+    if (!title) { showToast('Please enter a title.', 'error'); return; }
+
+    const btn = document.getElementById('publishBtn');
+    btn.disabled = true;
+    btn.innerHTML = '<div class="spinner"></div> Publishing…';
+    document.getElementById('panelStatus').textContent = 'Uploading…';
+    document.getElementById('panelStatus').style.color = 'var(--accent)';
+
+    // Simulated upload progress
+    const prog = document.getElementById('uploadProgress');
+    const fill = document.getElementById('progressFill');
+    const pct  = document.getElementById('progressPct');
+    prog.classList.add('visible');
+
+    let p = 0;
+    const iv = setInterval(() => {
+      p += Math.random() * 14;
+      if (p >= 100) { p = 100; clearInterval(iv); onUploadComplete(); }
+      fill.style.width = p.toFixed(0) + '%';
+      pct.textContent  = p.toFixed(0) + '%';
+    }, 180);
+  }
+
+  function onUploadComplete() {
+    document.getElementById('panelStatus').textContent = 'Published';
+    document.getElementById('panelStatus').style.color = 'var(--success)';
+    showToast('Photo published successfully!', 'success');
+    const btn = document.getElementById('publishBtn');
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Publish`;
+
+    // Add to recent list
+    const title = document.getElementById('title').value.trim();
+    addRecentItem(title);
+  }
+
+  function addRecentItem(title) {
+    const list = document.getElementById('recentList');
+    const item = document.createElement('div');
+    item.className = 'recent-item';
+    item.style.animation = 'popIn 0.3s ease';
+    item.innerHTML = `
+      <div class="recent-thumb">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      </div>
+      <div class="recent-info">
+        <div class="recent-name">${title}</div>
+        <div class="recent-meta">Just now</div>
+      </div>
+      <span class="recent-status status-live">Live</span>`;
+    list.insertBefore(item, list.firstChild);
+  }
+
+  function saveDraft() {
+    showToast('Draft saved to Azure Blob Storage.', 'success');
+    document.getElementById('panelStatus').textContent = 'Draft Saved';
+    document.getElementById('panelStatus').style.color = 'var(--muted)';
+  }
+
+  function resetForm() {
+    selectedFiles = [];
+    tags = [];
+    document.getElementById('previewStrip').innerHTML = '';
+    document.getElementById('title').value = '';
+    document.getElementById('caption').value = '';
+    document.getElementById('location').value = '';
+    document.getElementById('dateTaken').value = '';
+    document.getElementById('altText').value = '';
+    document.getElementById('category').value = '';
+    document.getElementById('tagInput').value = '';
+    document.querySelectorAll('.tag-chip').forEach(c => c.remove());
+    document.getElementById('titleCount').textContent = '0';
+    document.getElementById('captionCount').textContent = '0';
+    document.getElementById('uploadProgress').classList.remove('visible');
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('progressPct').textContent = '0%';
+    document.getElementById('panelFileCount').textContent = '0';
+    document.getElementById('panelFileSize').textContent = '—';
+    document.getElementById('panelStatus').textContent = 'Ready';
+    document.getElementById('panelStatus').style.color = 'var(--accent)';
+    showToast('Form cleared.', 'success');
+  }
+
+  /* ── Toast ── */
+  let toastTimer;
+  function showToast(msg, type = 'success') {
+    const toast = document.getElementById('toast');
+    const icon  = document.getElementById('toastIcon');
+    document.getElementById('toastMsg').textContent = msg;
+    icon.className = `toast-icon ${type}`;
+    icon.textContent = type === 'success' ? '✓' : '✕';
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
+  }
+
+  /* ── Init date ── */
+  document.getElementById('dateTaken').valueAsDate = new Date();
+</script>
+</body>
+</html>

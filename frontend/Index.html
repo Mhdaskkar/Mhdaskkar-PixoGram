@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PixoGram Share Your World</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:    #0d0d0d;
+      --cream:  #d5c8b2;
+      --warm:   #e8dfd0;
+      --gold:   #c9a84c;
+      --gold2:  #e6c97a;
+      --rust:   #b5451b;
+      --muted:  #7a7065;
+      --card:   #ffffff;
+      --radius: 4px;
+    }
+
+    html, body { height: 100%; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── NAV ── */
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1.4rem 4rem;
+      background: var(--cream);
+      border-bottom: 1px solid var(--warm);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--ink);
+      text-decoration: none;
+    }
+    .logo span { color: var(--gold); font-style: italic; }
+    nav .nav-actions { display: flex; gap: 1rem; align-items: center; }
+    .btn {
+      display: inline-flex; align-items: center; gap: .45rem;
+      padding: .6rem 1.4rem;
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .9rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all .18s ease;
+      border: none;
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1.5px solid var(--ink);
+      color: var(--ink);
+    }
+    .btn-ghost:hover { background: var(--ink); color: var(--cream); }
+    .btn-primary {
+      background: var(--ink);
+      color: var(--cream);
+    }
+    .btn-primary:hover { background: #333; }
+    .btn-gold {
+      background: var(--gold);
+      color: #fff;
+    }
+    .btn-gold:hover { background: #b8923d; }
+
+    /* ── HERO ── */
+    .hero {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      min-height: calc(100vh - 70px);
+      overflow: hidden;
+    }
+    .hero-text {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 5rem 4rem 5rem 4rem;
+    }
+    .hero-eyebrow {
+      font-size: .75rem;
+      font-weight: 500;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--gold);
+      margin-bottom: 1.4rem;
+    }
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(3rem, 5vw, 4.8rem);
+      line-height: 1.05;
+      font-weight: 700;
+      margin-bottom: 1.6rem;
+    }
+    .hero-title em {
+      font-style: italic;
+      color: var(--gold);
+    }
+    .hero-sub {
+      font-size: 1.1rem;
+      font-weight: 300;
+      color: var(--muted);
+      line-height: 1.7;
+      max-width: 420px;
+      margin-bottom: 2.8rem;
+    }
+    .hero-ctas { display: flex; gap: 1rem; flex-wrap: wrap; }
+
+    .hero-visual {
+      background: var(--ink);
+      position: relative;
+      overflow: hidden;
+    }
+    .mosaic {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: repeat(4, 1fr);
+      height: 100%;
+      gap: 3px;
+    }
+    .mosaic-cell {
+      background: var(--warm);
+      position: relative;
+      overflow: hidden;
+      transition: opacity .4s ease;
+    }
+    .mosaic-cell:nth-child(1) { grid-row: 1/3; grid-column: 1; background: #2a2018; }
+    .mosaic-cell:nth-child(2) { grid-row: 1; grid-column: 2/4; background: #1a1410; }
+    .mosaic-cell:nth-child(3) { grid-row: 2; grid-column: 2; background: #342c1e; }
+    .mosaic-cell:nth-child(4) { grid-row: 2/4; grid-column: 3; background: #201a12; }
+    .mosaic-cell:nth-child(5) { grid-row: 3/5; grid-column: 1/3; background: #2e2416; }
+    .mosaic-cell:nth-child(6) { grid-row: 4; grid-column: 3; background: #3a3020; }
+    .mosaic-img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      opacity: .7;
+      filter: sepia(20%);
+      transition: transform .6s ease;
+    }
+    .mosaic-cell:hover .mosaic-img { transform: scale(1.05); opacity: .9; }
+
+    /* placeholder tinted divs for demo */
+    .mosaic-placeholder {
+      width: 100%; height: 100%;
+      background: linear-gradient(135deg, rgba(201,168,76,.15), rgba(13,13,13,.6));
+    }
+    .mosaic-cell:nth-child(1) .mosaic-placeholder { background: linear-gradient(160deg, #5c3d1e, #1a1008); }
+    .mosaic-cell:nth-child(2) .mosaic-placeholder { background: linear-gradient(200deg, #4a3518, #100c06); }
+    .mosaic-cell:nth-child(3) .mosaic-placeholder { background: linear-gradient(120deg, #3d2e10, #1e1a0e); }
+    .mosaic-cell:nth-child(4) .mosaic-placeholder { background: linear-gradient(180deg, #2a2010, #0d0a04); }
+    .mosaic-cell:nth-child(5) .mosaic-placeholder { background: linear-gradient(140deg, #6b4c24, #1a120a); }
+    .mosaic-cell:nth-child(6) .mosaic-placeholder { background: linear-gradient(100deg, #3a2c16, #14100a); }
+    .mosaic-label {
+      position: absolute;
+      bottom: .8rem; left: .8rem;
+      font-size: .65rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.5);
+      font-weight: 500;
+    }
+
+    /* ── ROLE CARDS ── */
+    .roles-section {
+      padding: 6rem 4rem;
+      background: var(--ink);
+      color: var(--cream);
+    }
+    .roles-section h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.4rem;
+      text-align: center;
+      margin-bottom: .8rem;
+    }
+    .roles-section p.subtitle {
+      text-align: center;
+      color: rgba(245,240,232,.5);
+      font-weight: 300;
+      margin-bottom: 3.5rem;
+    }
+    .roles-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      max-width: 860px;
+      margin: 0 auto;
+    }
+    .role-card {
+      border: 1px solid rgba(201,168,76,.25);
+      border-radius: 8px;
+      padding: 2.4rem;
+      transition: border-color .2s, background .2s;
+    }
+    .role-card:hover { border-color: var(--gold); background: rgba(201,168,76,.05); }
+    .role-icon { font-size: 2.2rem; margin-bottom: 1.2rem; }
+    .role-card h3 {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem;
+      margin-bottom: .8rem;
+    }
+    .role-card p { color: rgba(245,240,232,.6); font-weight: 300; line-height: 1.65; margin-bottom: 1.6rem; font-size: .95rem; }
+    .role-card ul { list-style: none; margin-bottom: 2rem; }
+    .role-card ul li {
+      font-size: .85rem;
+      color: rgba(245,240,232,.7);
+      padding: .3rem 0;
+      padding-left: 1.2rem;
+      position: relative;
+    }
+    .role-card ul li::before {
+      content: '→';
+      position: absolute; left: 0;
+      color: var(--gold);
+      font-size: .75rem;
+    }
+
+    /* ── STATS STRIP ── */
+    .stats-strip {
+      background: var(--gold);
+      padding: 2rem 4rem;
+      display: flex;
+      justify-content: center;
+      gap: 5rem;
+    }
+    .stat { text-align: center; }
+    .stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--ink);
+    }
+    .stat-label {
+      font-size: .75rem;
+      font-weight: 500;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: rgba(13,13,13,.6);
+    }
+
+    /* ── FEATURES ── */
+    .features-section {
+      padding: 6rem 4rem;
+      background: var(--cream);
+    }
+    .features-section h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.4rem;
+      text-align: center;
+      margin-bottom: 3.5rem;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .feature {
+      padding: 2rem;
+      border-top: 2px solid var(--warm);
+    }
+    .feature-icon { font-size: 1.8rem; margin-bottom: 1rem; }
+    .feature h4 { font-family: 'Playfair Display', serif; margin-bottom: .5rem; font-size: 1.1rem; }
+    .feature p { font-size: .88rem; color: var(--muted); line-height: 1.65; font-weight: 300; }
+
+    /* ── FOOTER ── */
+    footer {
+      padding: 2rem 4rem;
+      background: var(--ink);
+      color: rgba(245,240,232,.4);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: .8rem;
+      margin-top: auto;
+    }
+    footer .logo { font-size: 1.2rem; }
+
+    /* ── AUTH MODAL ── */
+    .modal-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(13,13,13,.7);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .modal {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 2.8rem;
+      width: 420px;
+      max-width: 95vw;
+      position: relative;
+      animation: slideUp .25s ease;
+    }
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to   { transform: translateY(0);    opacity: 1; }
+    }
+    .modal-close {
+      position: absolute; top: 1.2rem; right: 1.2rem;
+      background: none; border: none; cursor: pointer;
+      font-size: 1.2rem; color: var(--muted);
+    }
+    .modal h2 { font-family: 'Playfair Display', serif; font-size: 1.8rem; margin-bottom: .4rem; }
+    .modal p.hint { color: var(--muted); font-size: .88rem; margin-bottom: 2rem; font-weight: 300; }
+
+    .form-group { margin-bottom: 1.2rem; }
+    .form-group label { display: block; font-size: .8rem; font-weight: 500; margin-bottom: .4rem; letter-spacing: .04em; text-transform: uppercase; }
+    .form-group input, .form-group select {
+      width: 100%;
+      padding: .75rem 1rem;
+      border: 1.5px solid var(--warm);
+      border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif;
+      font-size: .95rem;
+      background: var(--cream);
+      color: var(--ink);
+      transition: border-color .15s;
+      outline: none;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--gold); }
+    .form-error { color: var(--rust); font-size: .82rem; margin-top: .4rem; display: none; }
+    .form-group.has-error input { border-color: var(--rust); }
+    .form-group.has-error .form-error { display: block; }
+
+    .modal-footer {
+      margin-top: 1.8rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: .85rem;
+      color: var(--muted);
+    }
+    .modal-footer a { color: var(--gold); text-decoration: none; font-weight: 500; }
+
+    .tabs { display: flex; gap: 0; margin-bottom: 2rem; border-bottom: 1.5px solid var(--warm); }
+    .tab-btn {
+      flex: 1;
+      padding: .7rem;
+      background: none;
+      border: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: .9rem;
+      cursor: pointer;
+      color: var(--muted);
+      border-bottom: 2.5px solid transparent;
+      margin-bottom: -1.5px;
+      transition: all .15s;
+    }
+    .tab-btn.active { color: var(--ink); font-weight: 500; border-bottom-color: var(--gold); }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    .divider {
+      display: flex; align-items: center; gap: 1rem;
+      margin: 1.4rem 0;
+      color: var(--muted); font-size: .8rem;
+    }
+    .divider::before, .divider::after {
+      content: ''; flex: 1;
+      height: 1px; background: var(--warm);
+    }
+.mosaic-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+    .toast {
+      position: fixed; bottom: 2rem; right: 2rem;
+      padding: .9rem 1.6rem;
+      background: var(--ink); color: var(--cream);
+      border-radius: 6px;
+      font-size: .88rem;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all .3s ease;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    .toast.success { border-left: 3px solid #4ade80; }
+    .toast.error   { border-left: 3px solid var(--rust); }
+
+    @media (max-width: 768px) {
+      nav { padding: 1rem 1.5rem; }
+      .hero { grid-template-columns: 1fr; }
+      .hero-visual { height: 300px; }
+      .hero-text { padding: 3rem 1.5rem; }
+      .roles-grid, .features-grid { grid-template-columns: 1fr; }
+      .roles-section, .features-section { padding: 4rem 1.5rem; }
+      .stats-strip { gap: 2rem; flex-wrap: wrap; padding: 2rem 1.5rem; }
+      footer { flex-direction: column; gap: 1rem; text-align: center; padding: 2rem 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="logo">Pixo<span>gram</span></a>
+  <div class="nav-actions">
+    <button class="btn btn-ghost" onclick="openModal('login')">Sign In</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-text">
+    <p class="hero-eyebrow">Photo Sharing Platform</p>
+    <h1 class="hero-title">
+      Every Image<br>Tells<br><em>Your Story</em>
+    </h1>
+    <p class="hero-sub">
+      PixoGram connects creators and their audiences through beautifully curated photography. Upload, discover, and engage with imagery that moves you.
+    </p>
+    <div class="hero-ctas">
+      <button class="btn btn-primary" onclick="openModal('register')" style="padding:.8rem 2rem;font-size:1rem;">Start Exploring</button>
+      <a href="consumer.html?demo=true" class="btn btn-ghost" style="padding:.8rem 2rem;font-size:1rem;">Browse as Guest</a>
+    </div>
+  </div>
+  <div class="hero-visual" aria-hidden="true">
+  <div class="mosaic">
+
+    <div class="mosaic-cell">
+      <img src="https://images.unsplash.com/photo-1627765979356-40ca568b38a2?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Landscape">
+      <span class="mosaic-label"></span>
+    </div>
+
+    <div class="mosaic-cell">
+      <img src="https://images.unsplash.com/photo-1602851247654-20c7d8ab87c3?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Portrait">
+      <span class="mosaic-label"></span>
+    </div>
+
+    <div class="mosaic-cell">
+      <img src="https://images.unsplash.com/photo-1546636889-ba9fdd63583e?q=80&w=715&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Street">
+      <span class="mosaic-label"></span>
+    </div>
+
+    <div class="mosaic-cell">
+      <img src="https://images.unsplash.com/photo-1584462225088-6d6852e9a8ea?q=80&w=686&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Wildlife">
+      <span class="mosaic-label"></span>
+    </div>
+
+    <div class="mosaic-cell">
+      <img src="https://images.unsplash.com/photo-1472396961693-142e6e269027?q=80&w=652&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Architecture">
+      <span class="mosaic-label"></span>
+    </div>
+
+    <div class="mosaic-cell">
+      <img src="https://images.unsplash.com/photo-1561037404-61cd46aa615b?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D" alt="Abstract">
+      <span class="mosaic-label"></span>
+    </div>
+
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-strip">
+  <div class="stat"><div class="stat-num">12K+</div><div class="stat-label">Photos</div></div>
+  <div class="stat"><div class="stat-num">850+</div><div class="stat-label">Creators</div></div>
+  <div class="stat"><div class="stat-num">45K+</div><div class="stat-label">Members</div></div>
+  <div class="stat"><div class="stat-num">4.8★</div><div class="stat-label">Avg Rating</div></div>
+</div>
+</section>
+
+<footer>
+  <a href="/" class="logo" style="color:rgba(245,240,232,.6)">Pix<span style="color:var(--gold);font-style:italic">ora</span></a>
+  <span>© 2024 Pixogram. Cloud-native photo sharing on Azure.</span>
+  <span>Privacy · Terms · Contact</span>
+</footer>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+
+    <div class="tabs">
+      <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')">Sign In</button>
+      <button class="tab-btn" id="tabRegister" onclick="switchTab('register')">Register</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="tab-pane active" id="paneLogin">
+      <h2>Welcome back</h2>
+      <p class="hint">Sign in to access your PixoGram account.</p>
+      <div class="form-group" id="grpEmail">
+        <label>Email Address</label>
+        <input type="email" id="loginEmail" placeholder="you@example.com" />
+        <span class="form-error">Please enter a valid email.</span>
+      </div>
+      <div class="form-group" id="grpPassword">
+        <label>Password</label>
+        <input type="password" id="loginPassword" placeholder="••••••••" />
+        <span class="form-error">Password is required.</span>
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:.85rem;font-size:1rem;margin-top:.5rem;" onclick="handleLogin()">Sign In</button>
+      <div class="divider">or continue with</div>
+      <button class="btn btn-ghost" style="width:100%;padding:.85rem;" onclick="handleAzureLogin()">
+        <svg width="18" height="18" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5 0L0 6.0625V14.9375L10.5 21L21 14.9375V6.0625L10.5 0Z" fill="#00A4EF"/></svg>
+        Continue with Microsoft
+      </button>
+    </div>
+
+    <!-- REGISTER -->
+    <div class="tab-pane" id="paneRegister">
+      <h2>Join Pixogram</h2>
+      <p class="hint">Create a free consumer account to explore photography.</p>
+      <div class="form-group">
+        <label>Display Name</label>
+        <input type="text" id="regName" placeholder="Jane Doe" />
+      </div>
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" id="regEmail" placeholder="you@example.com" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="regPassword" placeholder="Min. 8 characters" />
+      </div>
+      <button class="btn btn-primary" style="width:100%;padding:.85rem;font-size:1rem;margin-top:.5rem;" onclick="handleRegister()">Create Account</button>
+      <div class="divider">or</div>
+      <button class="btn btn-ghost" style="width:100%;padding:.85rem;" onclick="handleAzureLogin()">
+        <svg width="18" height="18" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10.5 0L0 6.0625V14.9375L10.5 21L21 14.9375V6.0625L10.5 0Z" fill="#00A4EF"/></svg>
+        Sign up with Microsoft
+      </button>
+      <p style="font-size:.78rem;color:var(--muted);margin-top:1.2rem;text-align:center;line-height:1.5;">
+        By registering, you agree to our <a href="#" style="color:var(--gold)">Terms of Service</a> and <a href="#" style="color:var(--gold)">Privacy Policy</a>.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── MODAL ──
+  function openModal(tab) {
+    document.getElementById('authModal').classList.add('active');
+    switchTab(tab || 'login');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal() {
+    document.getElementById('authModal').classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  function switchTab(tab) {
+    ['Login','Register'].forEach(t => {
+      document.getElementById('tab'+t).classList.toggle('active', t.toLowerCase()===tab);
+      document.getElementById('pane'+t).classList.toggle('active', t.toLowerCase()===tab);
+    });
+  }
+  document.getElementById('authModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('authModal')) closeModal();
+  });
+
+  // ── TOAST ──
+  function showToast(msg, type='success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + type;
+    setTimeout(() => t.className = 'toast', 3000);
+  }
+
+  // ── AUTH (demo — in production use MSAL.js + AAD B2C) ──
+  const API_BASE = 'https://api.Pixogram.io/v1'; // Replace with actual API URL
+
+  async function handleLogin() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    if (!email || !password) { showToast('Please fill in all fields.', 'error'); return; }
+
+    // Demo: simulate login
+    // In production: call AAD B2C token endpoint or use MSAL.js
+    try {
+      // const res = await fetch(`${API_BASE}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email,password}) });
+      // const data = await res.json();
+      // if (!res.ok) throw new Error(data.message || 'Login failed');
+      // localStorage.setItem('token', data.token);
+      // localStorage.setItem('role', data.role);
+
+      // DEMO routing
+      const role = email.includes('creator') ? 'creator' : 'consumer';
+      localStorage.setItem('Pixogram_token', 'demo_jwt_' + Date.now());
+      localStorage.setItem('Pixogram_role', role);
+      localStorage.setItem('Pixogram_name', email.split('@')[0]);
+      showToast('Signed in! Redirecting…', 'success');
+      setTimeout(() => {
+        window.location.href = role === 'creator' ? 'creator.html' : 'consumer.html';
+      }, 900);
+    } catch(e) {
+      showToast(e.message || 'Login failed', 'error');
+    }
+  }
+
+  async function handleRegister() {
+    const name = document.getElementById('regName').value.trim();
+    const email = document.getElementById('regEmail').value.trim();
+    const password = document.getElementById('regPassword').value;
+    if (!name || !email || !password) { showToast('Please fill in all fields.', 'error'); return; }
+    if (password.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
+
+    // DEMO
+    localStorage.setItem('Pixogram_token', 'demo_jwt_' + Date.now());
+    localStorage.setItem('Pixogram_role', 'consumer');
+    localStorage.setItem('Pixogram_name', name);
+    showToast('Account created! Welcome to Pixogram.', 'success');
+    setTimeout(() => window.location.href = 'consumer.html', 1000);
+  }
+
+  function handleAzureLogin() {
+    // In production: msalInstance.loginRedirect(loginRequest)
+    showToast('Redirecting to Microsoft Sign-In…', 'success');
+    setTimeout(() => {
+      // Simulate: set demo token, redirect to consumer
+      localStorage.setItem('Pixogram_token', 'msal_demo_' + Date.now());
+      localStorage.setItem('Pixogram_role', 'consumer');
+      localStorage.setItem('Pixogram_name', 'Microsoft User');
+      window.location.href = 'consumer.html';
+    }, 1200);
+  }
+
+  // Auto-redirect if already logged in
+  if (localStorage.getItem('Pixogram_token')) {
+    const role = localStorage.getItem('Pixogram_role');
+    if (role === 'creator') window.location.href = 'creator.html';
+    else if (role === 'consumer') window.location.href = 'consumer.html';
+  }
+</script>
+</body>
+</html>

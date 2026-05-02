@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: pixogram-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    environment:
+      - REDIS_PASSWORD=devpassword
+    command: redis-server --requirepass devpassword
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: pixogram-api
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+
+      # ── JWT (no B2C needed) ──────────────────────────────────────────────
+      JWT_SECRET: dev-local-secret-change-in-production
+      JWT_EXPIRY: 1h
+
+      # ── Redis ────────────────────────────────────────────────────────────
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: devpassword
+      REDIS_SSL: "false"
+
+      # ── Cosmos ───────────────────────────────────────────────────────────
+      COSMOS_ENDPOINT: ${COSMOS_ENDPOINT:-https://localhost:8081}
+      COSMOS_KEY: ${COSMOS_KEY:-C2y6yDjf5/R+ob0N8A7Cgv30VRDJIWEHLM+4QDU5DE2nQ9nDuVTqobD4b8mGGyPST}
+      COSMOS_DATABASE: PixoGram
+
+      # ── Storage ───────────────────────────────────────────────────────────
+      STORAGE_CONNECTION_STRING: ${STORAGE_CONNECTION_STRING:-DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;}
+      STORAGE_CONTAINER_NAME: photos
+      STORAGE_THUMBNAIL_CONTAINER: thumbnails
+
+      # ── Vision ────────────────────────────────────────────────────────────
+      VISION_ENDPOINT: ${VISION_ENDPOINT:-http://localhost:5000}
+      VISION_KEY: ${VISION_KEY:-test-key}
+
+      ALLOWED_ORIGINS: "http://localhost:3001,http://localhost:3000"
+      LOG_LEVEL: debug
+
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    networks:
+      - pixogram-network
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    container_name: pixogram-azurite
+    ports:
+      - "10000:10000"
+      - "10001:10001"
+      - "10002:10002"
+    volumes:
+      - azurite-data:/data
+    networks:
+      - pixogram-network
+
+volumes:
+  redis-data:
+  azurite-data:
+
+networks:
+  pixogram-network:
+    driver: bridge

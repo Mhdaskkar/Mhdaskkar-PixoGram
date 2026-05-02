@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pixogram — Discover</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --ink: #0d0d0d; --cream: #f5f0e8; --warm: #e8dfd0; --gold: #c9a84c;
+      --rust: #b5451b; --muted: #7a7065; --card: #fff; --radius: 6px;
+      --sidebar: 260px;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); }
+
+    /* ── NAV ── */
+    header {
+      position: sticky; top: 0; z-index: 200;
+      background: var(--ink); color: var(--cream);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .9rem 2rem;
+      gap: 1rem;
+    }
+    .logo { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--cream); text-decoration: none; white-space: nowrap; }
+    .logo span { color: var(--gold); font-style: italic; }
+
+    .search-bar {
+      flex: 1; max-width: 540px;
+      display: flex; align-items: center;
+      background: rgba(255,255,255,.1); border-radius: 6px; overflow: hidden;
+    }
+    .search-bar input {
+      flex: 1; padding: .65rem 1rem;
+      background: transparent; border: none; color: var(--cream);
+      font-family: 'DM Sans', sans-serif; font-size: .9rem; outline: none;
+    }
+    .search-bar input::placeholder { color: rgba(255,255,255,.4); }
+    .search-bar button {
+      padding: .65rem 1rem; background: var(--gold); border: none; cursor: pointer;
+      color: #fff; font-size: 1rem;
+    }
+    .search-bar button:hover { background: #b8923d; }
+
+    .nav-user { display: flex; align-items: center; gap: .8rem; white-space: nowrap; }
+    .nav-user span { font-size: .85rem; color: rgba(255,255,255,.6); }
+    .nav-user strong { color: var(--gold); }
+    .btn-sm {
+      padding: .45rem 1rem; border-radius: 4px; border: 1.5px solid rgba(255,255,255,.25);
+      background: transparent; color: var(--cream); font-family: 'DM Sans',sans-serif;
+      font-size: .82rem; cursor: pointer; text-decoration: none;
+      transition: all .15s;
+    }
+    .btn-sm:hover { background: rgba(255,255,255,.1); }
+
+    /* ── LAYOUT ── */
+    .app-body { display: flex; min-height: calc(100vh - 54px); }
+
+    /* ── SIDEBAR ── */
+    aside {
+      width: var(--sidebar); flex-shrink: 0;
+      background: var(--card); border-right: 1px solid var(--warm);
+      padding: 1.6rem 1.2rem;
+      position: sticky; top: 54px; height: calc(100vh - 54px);
+      overflow-y: auto;
+    }
+    aside h3 {
+      font-size: .7rem; font-weight: 500; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--muted); margin-bottom: 1rem;
+    }
+    .filter-section { margin-bottom: 2rem; }
+    .filter-chip-group { display: flex; flex-wrap: wrap; gap: .4rem; }
+    .chip {
+      padding: .3rem .8rem; border-radius: 20px; font-size: .78rem;
+      border: 1.5px solid var(--warm); cursor: pointer; background: transparent;
+      transition: all .14s; font-family: 'DM Sans', sans-serif;
+      color: var(--muted);
+    }
+    .chip.active, .chip:hover { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+    .chip.gold.active { background: var(--gold); border-color: var(--gold); color: #fff; }
+
+    .range-label { display: flex; justify-content: space-between; font-size: .78rem; color: var(--muted); margin-bottom: .4rem; }
+    input[type=range] { width: 100%; accent-color: var(--gold); }
+
+    .sort-select {
+      width: 100%; padding: .5rem .7rem;
+      border: 1.5px solid var(--warm); border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif; font-size: .85rem; background: var(--cream);
+      color: var(--ink); cursor: pointer; outline: none;
+    }
+
+    /* ── MAIN ── */
+    main { flex: 1; padding: 2rem; }
+
+    .main-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+    .main-header h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; }
+    .result-count { font-size: .85rem; color: var(--muted); font-weight: 300; }
+
+    /* ── PHOTO GRID ── */
+    .photo-grid {
+      columns: 3; column-gap: 1.2rem;
+    }
+    @media (max-width: 1200px) { .photo-grid { columns: 2; } }
+    @media (max-width: 600px) { .photo-grid { columns: 1; } }
+
+    .photo-card {
+      break-inside: avoid;
+      margin-bottom: 1.2rem;
+      background: var(--card);
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform .2s, box-shadow .2s;
+      position: relative;
+    }
+    .photo-card:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(0,0,0,.12); }
+
+    .photo-img-wrap { position: relative; overflow: hidden; }
+    .photo-img-wrap img, .photo-placeholder {
+      width: 100%; display: block;
+      transition: transform .4s ease;
+    }
+    .photo-card:hover .photo-img-wrap img,
+    .photo-card:hover .photo-placeholder { transform: scale(1.04); }
+
+    .photo-placeholder {
+      background: linear-gradient(135deg, var(--warm), #d4c9b6);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem; color: rgba(122,112,101,.4);
+    }
+
+    .photo-overlay {
+      position: absolute; inset: 0;
+      background: linear-gradient(to top, rgba(13,13,13,.7) 0%, transparent 55%);
+      opacity: 0; transition: opacity .2s;
+      display: flex; align-items: flex-end; padding: 1rem;
+    }
+    .photo-card:hover .photo-overlay { opacity: 1; }
+    .photo-overlay-inner { display: flex; gap: .8rem; }
+    .overlay-action {
+      background: rgba(255,255,255,.15); backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,.25); border-radius: 20px;
+      color: #fff; font-size: .75rem; padding: .3rem .8rem;
+      cursor: pointer; transition: background .15s; font-family: 'DM Sans',sans-serif;
+    }
+    .overlay-action:hover { background: rgba(255,255,255,.3); }
+
+    .photo-info { padding: .9rem 1rem 1rem; }
+    .photo-info h4 {
+      font-family: 'Playfair Display', serif; font-size: 1rem;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: .3rem;
+    }
+    .photo-meta { display: flex; justify-content: space-between; align-items: center; }
+    .photo-creator { font-size: .78rem; color: var(--muted); font-weight: 300; }
+    .photo-stats { display: flex; gap: .7rem; align-items: center; }
+    .stars { color: var(--gold); font-size: .8rem; letter-spacing: -.05em; }
+    .rating-val { font-size: .78rem; font-weight: 500; }
+    .comment-ct { font-size: .75rem; color: var(--muted); }
+    .photo-tags { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .55rem; }
+    .tag { font-size: .68rem; padding: .15rem .5rem; background: var(--warm); border-radius: 10px; color: var(--muted); }
+    .photo-location { font-size: .72rem; color: var(--muted); margin-top: .35rem; display: flex; align-items: center; gap: .25rem; }
+
+    /* ── EMPTY ── */
+    .empty-state { text-align: center; padding: 5rem 2rem; }
+    .empty-state .icon { font-size: 3.5rem; margin-bottom: 1rem; }
+    .empty-state h3 { font-family: 'Playfair Display',serif; font-size: 1.5rem; margin-bottom: .5rem; }
+    .empty-state p { color: var(--muted); font-weight: 300; }
+
+    /* ── SKELETON ── */
+    .skeleton { animation: shimmer 1.4s infinite; }
+    @keyframes shimmer {
+      0%,100% { opacity: .6; }
+      50%      { opacity: .3; }
+    }
+    .skel-img { background: var(--warm); height: 200px; width: 100%; }
+    .skel-line { background: var(--warm); border-radius: 4px; margin: .4rem 0; }
+
+    /* ── PAGINATION ── */
+    .pagination { display: flex; justify-content: center; gap: .5rem; margin-top: 2.5rem; }
+    .page-btn {
+      padding: .5rem .9rem; border: 1.5px solid var(--warm); background: var(--card);
+      border-radius: 4px; cursor: pointer; font-family: 'DM Sans', sans-serif;
+      font-size: .85rem; transition: all .14s;
+    }
+    .page-btn:hover, .page-btn.active { background: var(--ink); color: var(--cream); border-color: var(--ink); }
+
+    /* ── MODAL (Photo Detail) ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 1000;
+      background: rgba(13,13,13,.85); backdrop-filter: blur(6px);
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.active { display: flex; }
+    .photo-modal {
+      background: var(--card); border-radius: 12px; overflow: hidden;
+      width: min(900px, 95vw); max-height: 90vh; display: flex;
+      animation: popIn .2s ease;
+    }
+    @keyframes popIn {
+      from { transform: scale(.95); opacity: 0; }
+      to   { transform: scale(1);   opacity: 1; }
+    }
+    .modal-img-side { flex: 1.2; background: var(--ink); display: flex; align-items: center; justify-content: center; min-height: 400px; }
+    .modal-img-side img { width: 100%; height: 100%; object-fit: cover; }
+    .modal-img-placeholder { width: 100%; height: 100%; min-height: 400px; display: flex; align-items: center; justify-content: center; }
+    .modal-info-side { flex: 1; padding: 1.8rem; overflow-y: auto; display: flex; flex-direction: column; }
+
+    .modal-close-btn {
+      position: absolute; top: 1rem; right: 1rem;
+      background: rgba(255,255,255,.15); border: none; color: #fff;
+      width: 36px; height: 36px; border-radius: 50%; cursor: pointer;
+      font-size: 1rem; z-index: 10; transition: background .15s;
+    }
+    .modal-close-btn:hover { background: rgba(255,255,255,.3); }
+
+    .modal-title { font-family: 'Playfair Display', serif; font-size: 1.5rem; margin-bottom: .4rem; }
+    .modal-caption { font-size: .9rem; color: var(--muted); font-weight: 300; line-height: 1.65; margin-bottom: 1rem; }
+    .modal-meta-row { display: flex; gap: 1.2rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .modal-meta-item { font-size: .8rem; color: var(--muted); display: flex; align-items: center; gap: .3rem; }
+
+    .star-rating { display: flex; gap: .3rem; margin-bottom: 1.2rem; }
+    .star-rating button {
+      background: none; border: none; cursor: pointer; font-size: 1.5rem;
+      color: var(--warm); transition: color .1s; line-height: 1;
+    }
+    .star-rating button.lit, .star-rating button:hover { color: var(--gold); }
+    .rating-prompt { font-size: .78rem; color: var(--muted); margin-bottom: .3rem; }
+
+    .comments-section { flex: 1; margin-top: 1rem; }
+    .comments-section h4 { font-size: .85rem; font-weight: 500; margin-bottom: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+    .comment-list { max-height: 220px; overflow-y: auto; margin-bottom: .8rem; }
+    .comment-item { padding: .55rem 0; border-bottom: 1px solid var(--warm); }
+    .comment-item:last-child { border: none; }
+    .comment-author { font-size: .78rem; font-weight: 500; margin-bottom: .2rem; }
+    .comment-text { font-size: .85rem; color: var(--muted); font-weight: 300; line-height: 1.5; }
+    .comment-time { font-size: .7rem; color: rgba(122,112,101,.6); margin-top: .2rem; }
+
+    .comment-input-row { display: flex; gap: .6rem; }
+    .comment-input-row input {
+      flex: 1; padding: .55rem .9rem; border: 1.5px solid var(--warm); border-radius: var(--radius);
+      font-family: 'DM Sans', sans-serif; font-size: .85rem; background: var(--cream); outline: none;
+    }
+    .comment-input-row input:focus { border-color: var(--gold); }
+    .comment-input-row button {
+      padding: .55rem 1rem; background: var(--ink); color: var(--cream);
+      border: none; border-radius: var(--radius); cursor: pointer;
+      font-family: 'DM Sans', sans-serif; font-size: .85rem;
+      transition: background .15s;
+    }
+    .comment-input-row button:hover { background: #333; }
+
+    .toast { position:fixed;bottom:2rem;right:2rem;padding:.9rem 1.6rem;background:var(--ink);color:var(--cream);border-radius:6px;font-size:.88rem;transform:translateY(80px);opacity:0;transition:all .3s;z-index:9999;pointer-events:none; }
+    .toast.show { transform:translateY(0);opacity:1; }
+    .toast.success { border-left:3px solid #4ade80; }
+    .toast.error   { border-left:3px solid var(--rust); }
+
+    @media(max-width:900px){
+      aside { display: none; }
+      .photo-modal { flex-direction: column; }
+      .modal-img-side { min-height: 250px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <a href="index.html" class="logo">Pixo<span>gram</span></a>
+  <div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Search photos, locations, tags…" oninput="debounceSearch()" onkeydown="if(event.key==='Enter')doSearch()" />
+    <button onclick="doSearch()">🔍</button>
+  </div>
+  <div class="nav-user">
+    <span>Hello, <strong id="userName">Guest</strong></span>
+    <a href="index.html" class="btn-sm" onclick="logout()">Sign Out</a>
+  </div>
+</header>
+
+<div class="app-body">
+  <!-- SIDEBAR -->
+  <aside>
+    <div class="filter-section">
+      <h3>Sort By</h3>
+      <select class="sort-select" id="sortBy" onchange="loadPhotos()">
+        <option value="recent">Most Recent</option>
+        <option value="rating">Top Rated</option>
+        <option value="comments">Most Discussed</option>
+      </select>
+    </div>
+
+    <div class="filter-section">
+      <h3>Categories</h3>
+      <div class="filter-chip-group" id="tagFilters">
+        <button class="chip active" data-tag="" onclick="setTag(this,'')">All</button>
+        <button class="chip" data-tag="landscape" onclick="setTag(this,'landscape')">Landscape</button>
+        <button class="chip" data-tag="portrait" onclick="setTag(this,'portrait')">Portrait</button>
+        <button class="chip" data-tag="street" onclick="setTag(this,'street')">Street</button>
+        <button class="chip" data-tag="wildlife" onclick="setTag(this,'wildlife')">Wildlife</button>
+        <button class="chip" data-tag="architecture" onclick="setTag(this,'architecture')">Architecture</button>
+        <button class="chip" data-tag="abstract" onclick="setTag(this,'abstract')">Abstract</button>
+        <button class="chip" data-tag="travel" onclick="setTag(this,'travel')">Travel</button>
+        <button class="chip" data-tag="food" onclick="setTag(this,'food')">Food</button>
+      </div>
+    </div>
+
+    <div class="filter-section">
+      <h3>Min. Rating</h3>
+      <div class="range-label"><span id="ratingLabel">Any</span><span>⭐</span></div>
+      <input type="range" min="0" max="5" step="1" value="0" id="minRating"
+             oninput="document.getElementById('ratingLabel').textContent=this.value>0?this.value+'★':'Any';loadPhotos()" />
+    </div>
+
+    <div class="filter-section">
+      <h3>Location</h3>
+      <input id="locationFilter" class="sort-select" placeholder="e.g. London" oninput="loadPhotos()" style="border:1.5px solid var(--warm);padding:.5rem .7rem;border-radius:var(--radius);font-size:.85rem;width:100%;background:var(--cream);outline:none;" />
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+    <div class="main-header">
+      <h2 id="feedTitle">Discover Photos</h2>
+      <span class="result-count" id="resultCount">Loading…</span>
+    </div>
+    <div class="photo-grid" id="photoGrid">
+      <!-- Skeleton loaders -->
+      <div class="photo-card skeleton"><div class="skel-img"></div><div style="padding:.9rem"><div class="skel-line" style="height:12px;width:70%"></div><div class="skel-line" style="height:10px;width:40%"></div></div></div>
+      <div class="photo-card skeleton"><div class="skel-img" style="height:280px"></div><div style="padding:.9rem"><div class="skel-line" style="height:12px;width:60%"></div><div class="skel-line" style="height:10px;width:35%"></div></div></div>
+      <div class="photo-card skeleton"><div class="skel-img" style="height:160px"></div><div style="padding:.9rem"><div class="skel-line" style="height:12px;width:80%"></div><div class="skel-line" style="height:10px;width:45%"></div></div></div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </main>
+</div>
+
+<!-- PHOTO DETAIL MODAL -->
+<div class="modal-overlay" id="photoModal">
+  <div class="photo-modal" style="position:relative">
+    <button class="modal-close-btn" onclick="closePhotoModal()">✕</button>
+    <div class="modal-img-side" id="modalImgSide">
+      <div class="modal-img-placeholder">
+        <div style="font-size:4rem;opacity:.3">📷</div>
+      </div>
+    </div>
+    <div class="modal-info-side" id="modalInfoSide">
+      <h2 class="modal-title" id="modalTitle">—</h2>
+      <p class="modal-caption" id="modalCaption"></p>
+      <div class="modal-meta-row" id="modalMeta"></div>
+
+      <p class="rating-prompt">Rate this photo:</p>
+      <div class="star-rating" id="starRating">
+        <button onclick="submitRating(1)">★</button>
+        <button onclick="submitRating(2)">★</button>
+        <button onclick="submitRating(3)">★</button>
+        <button onclick="submitRating(4)">★</button>
+        <button onclick="submitRating(5)">★</button>
+      </div>
+
+      <div class="comments-section">
+        <h4 id="commentCount">Comments</h4>
+        <div class="comment-list" id="commentList"></div>
+        <div class="comment-input-row">
+          <input type="text" id="commentInput" placeholder="Add a comment…" onkeydown="if(event.key==='Enter')submitComment()" />
+          <button onclick="submitComment()">Post</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API_BASE = 'https://api.Pixogram.io/v1';
+  let currentPage = 1;
+  let activeTag = '';
+  let activePhotoId = null;
+  let searchTimeout;
+
+  // ── INIT ──
+  const token = localStorage.getItem('Pixogram_token');
+  const name  = localStorage.getItem('Pixogram_name') || 'Guest';
+  document.getElementById('userName').textContent = name;
+
+  function logout() {
+    localStorage.removeItem('Pixogram_token');
+    localStorage.removeItem('Pixogram_role');
+    localStorage.removeItem('Pixogram_name');
+  }
+
+  // ── DEMO DATA ──
+  const DEMO_PHOTOS = [
+    { id:'1', title:'Morning Mist at Dartmoor', caption:'The golden hour fog rolling across the moors, absolutely breathtaking.', location:'Devon, UK', creator:'Emily Watson', tags:['landscape','nature'], rating:4.7, ratingCount:142, commentCount:28, height:280, color:'#2a3a2a' },
+    { id:'2', title:'Brick Lane Stories', caption:'Everyday life in the heart of East London. Street photography at its finest.', location:'London, UK', creator:'Kai Nwosu', tags:['street','urban'], rating:4.2, ratingCount:89, commentCount:15, height:220, color:'#1a1a2e' },
+    { id:'3', title:'Icelandic Reflections', caption:'The sky and earth become one on the still waters of Jökulsárlón.', location:'Iceland', creator:'Sofia Larsson', tags:['landscape','travel'], rating:4.9, ratingCount:312, commentCount:67, height:320, color:'#1e3040' },
+    { id:'4', title:'Market Colours', caption:'Spice vendors at the Medina souk, a riot of colour and scent.', location:'Marrakech, Morocco', creator:'Amara Diallo', tags:['street','travel','food'], rating:4.5, ratingCount:201, commentCount:43, height:200, color:'#3d1e10' },
+    { id:'5', title:'Golden Hour Portrait', caption:'Studio-quality light from nature itself. Nothing added, nothing taken.', location:'Barcelona, Spain', creator:'Luis Ferreira', tags:['portrait'], rating:4.6, ratingCount:178, commentCount:31, height:360, color:'#3d2a1a' },
+    { id:'6', title:'Urban Geometry', caption:'Found symmetry in the glass and steel of the financial district.', location:'Singapore', creator:'Mei Lin', tags:['architecture','abstract'], rating:4.3, ratingCount:134, commentCount:22, height:240, color:'#14141e' },
+    { id:'7', title:'Autumn Canopy', caption:'Walking under a cathedral of colour in the New Forest.', location:'Hampshire, UK', creator:'Emily Watson', tags:['landscape','nature'], rating:4.8, ratingCount:255, commentCount:55, height:190, color:'#3d2010' },
+    { id:'8', title:'Red Fox at Dusk', caption:'Caught this curious fox just before dark — held his gaze for a full minute.', location:'Scottish Highlands', creator:'James McAllister', tags:['wildlife','nature'], rating:4.9, ratingCount:421, commentCount:89, height:260, color:'#2e1a08' },
+    { id:'9', title:'Portobello Rain', caption:'Saturday market under an unexpected downpour. The umbrellas made it better.', location:'London, UK', creator:'Kai Nwosu', tags:['street','urban'], rating:4.0, ratingCount:76, commentCount:12, height:210, color:'#1e2030' },
+  ];
+
+  const DEMO_COMMENTS = {
+    '1': [
+      { author:'Mark P.', text:'The light is incredible here — what time did you shoot this?', time:'2 days ago' },
+      { author:'Sophie R.', text:'Dartmoor never looked so ethereal. Stunning.', time:'3 days ago' },
+      { author:'user_2948', text:'I hiked through here last summer! Brings back memories.', time:'1 week ago' },
+    ],
+    '3': [
+      { author:'Nina K.', text:'Iceland is on my bucket list entirely because of photos like this.', time:'1 day ago' },
+      { author:'Paulo M.', text:'The reflection is perfect. Long exposure?', time:'4 days ago' },
+    ],
+    '8': [
+      { author:'David T.', text:'PLEASE tell me this is real and not composited 😍', time:'5 hours ago' },
+      { author:'Sarah J.', text:'Wildlife photography at its absolute peak.', time:'1 day ago' },
+      { author:'Chris B.', text:'How long did you wait for this shot?', time:'2 days ago' },
+    ]
+  };
+
+  function starsHTML(r) {
+    const full = Math.floor(r); const half = r % 1 >= 0.5;
+    let s = '';
+    for (let i=0;i<full;i++) s += '★';
+    if (half) s += '½';
+    return s;
+  }
+
+  function renderPhotos(photos) {
+    const grid = document.getElementById('photoGrid');
+    if (!photos.length) {
+      grid.innerHTML = `<div class="empty-state" style="column-span:all"><div class="icon">🔍</div><h3>No photos found</h3><p>Try adjusting your search or filters.</p></div>`;
+      document.getElementById('resultCount').textContent = '0 results';
+      return;
+    }
+    document.getElementById('resultCount').textContent = `${photos.length} photo${photos.length!==1?'s':''}`;
+    grid.innerHTML = photos.map(p => `
+      <div class="photo-card" onclick="openPhotoModal('${p.id}')">
+        <div class="photo-img-wrap">
+          <div class="photo-placeholder" style="height:${p.height}px;background:linear-gradient(135deg,${p.color}cc,${p.color}44);justify-content:center;font-size:${p.height/5}px;opacity:.6">📷</div>
+          <div class="photo-overlay">
+            <div class="photo-overlay-inner">
+              <span class="overlay-action">View</span>
+              <span class="overlay-action">⭐ Rate</span>
+            </div>
+          </div>
+        </div>
+        <div class="photo-info">
+          <h4>${p.title}</h4>
+          <div class="photo-meta">
+            <span class="photo-creator">by ${p.creator}</span>
+            <div class="photo-stats">
+              <span class="stars">${starsHTML(p.rating)}</span>
+              <span class="rating-val">${p.rating.toFixed(1)}</span>
+              <span class="comment-ct">💬 ${p.commentCount}</span>
+            </div>
+          </div>
+          ${p.location ? `<div class="photo-location">📍 ${p.location}</div>` : ''}
+          <div class="photo-tags">${p.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function loadPhotos() {
+    const q = document.getElementById('searchInput').value.trim().toLowerCase();
+    const sort = document.getElementById('sortBy').value;
+    const minRating = +document.getElementById('minRating').value;
+    const location = document.getElementById('locationFilter').value.trim().toLowerCase();
+
+    let photos = [...DEMO_PHOTOS];
+
+    if (q) photos = photos.filter(p =>
+      p.title.toLowerCase().includes(q) || p.caption.toLowerCase().includes(q) ||
+      p.tags.some(t=>t.includes(q)) || p.location.toLowerCase().includes(q)
+    );
+    if (activeTag) photos = photos.filter(p => p.tags.includes(activeTag));
+    if (minRating > 0) photos = photos.filter(p => p.rating >= minRating);
+    if (location) photos = photos.filter(p => p.location.toLowerCase().includes(location));
+
+    if (sort === 'rating') photos.sort((a,b)=>b.rating-a.rating);
+    else if (sort === 'comments') photos.sort((a,b)=>b.commentCount-a.commentCount);
+    else photos.sort((a,b)=>+b.id - +a.id);
+
+    const title = q ? `Results for "${q}"` : activeTag ? `${activeTag.charAt(0).toUpperCase()+activeTag.slice(1)} Photos` : 'Discover Photos';
+    document.getElementById('feedTitle').textContent = title;
+
+    renderPhotos(photos);
+    renderPagination(1, 1);
+  }
+
+  function renderPagination(current, total) {
+    const el = document.getElementById('pagination');
+    if (total <= 1) { el.innerHTML = ''; return; }
+    el.innerHTML = Array.from({length:total},(_,i)=>
+      `<button class="page-btn${i+1===current?' active':''}" onclick="currentPage=${i+1};loadPhotos()">${i+1}</button>`
+    ).join('');
+  }
+
+  function setTag(btn, tag) {
+    document.querySelectorAll('#tagFilters .chip').forEach(c=>c.classList.remove('active'));
+    btn.classList.add('active');
+    activeTag = tag;
+    loadPhotos();
+  }
+
+  function doSearch() { loadPhotos(); }
+  function debounceSearch() { clearTimeout(searchTimeout); searchTimeout = setTimeout(loadPhotos, 350); }
+
+  // ── PHOTO MODAL ──
+  function openPhotoModal(id) {
+    const p = DEMO_PHOTOS.find(x=>x.id===id);
+    if (!p) return;
+    activePhotoId = id;
+
+    document.getElementById('modalTitle').textContent = p.title;
+    document.getElementById('modalCaption').textContent = p.caption;
+
+    const meta = document.getElementById('modalMeta');
+    meta.innerHTML = `
+      <span class="modal-meta-item">📍 ${p.location}</span>
+      <span class="modal-meta-item">👤 ${p.creator}</span>
+      <span class="modal-meta-item">⭐ ${p.rating.toFixed(1)} (${p.ratingCount} ratings)</span>
+      <span class="modal-meta-item">🏷️ ${p.tags.join(', ')}</span>
+    `;
+
+    const imgSide = document.getElementById('modalImgSide');
+    imgSide.innerHTML = `<div class="modal-img-placeholder" style="background:linear-gradient(135deg,${p.color}cc,${p.color}44);min-height:400px;font-size:5rem;opacity:.5;display:flex;align-items:center;justify-content:center;">📷</div>`;
+
+    // Reset stars
+    document.querySelectorAll('#starRating button').forEach((b,i) => b.classList.toggle('lit', false));
+
+    loadComments(id);
+    document.getElementById('photoModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closePhotoModal() {
+    document.getElementById('photoModal').classList.remove('active');
+    document.body.style.overflow = '';
+    activePhotoId = null;
+  }
+
+  document.getElementById('photoModal').addEventListener('click', e => {
+    if (e.target === document.getElementById('photoModal')) closePhotoModal();
+  });
+
+  function loadComments(id) {
+    const comments = DEMO_COMMENTS[id] || [];
+    const list = document.getElementById('commentList');
+    document.getElementById('commentCount').textContent = `Comments (${comments.length})`;
+    if (!comments.length) {
+      list.innerHTML = `<p style="font-size:.82rem;color:var(--muted);padding:.5rem 0;font-weight:300;">No comments yet. Be the first!</p>`;
+      return;
+    }
+    list.innerHTML = comments.map(c=>`
+      <div class="comment-item">
+        <div class="comment-author">${c.author}</div>
+        <div class="comment-text">${c.text}</div>
+        <div class="comment-time">${c.time}</div>
+      </div>
+    `).join('');
+  }
+
+  function submitComment() {
+    if (!token) { showToast('Please sign in to comment', 'error'); return; }
+    const input = document.getElementById('commentInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    if (!DEMO_COMMENTS[activePhotoId]) DEMO_COMMENTS[activePhotoId] = [];
+    DEMO_COMMENTS[activePhotoId].unshift({ author: name, text, time: 'Just now' });
+    const p = DEMO_PHOTOS.find(x=>x.id===activePhotoId);
+    if (p) p.commentCount++;
+    loadComments(activePhotoId);
+    input.value = '';
+    showToast('Comment posted!', 'success');
+  }
+
+  function submitRating(val) {
+    if (!token) { showToast('Please sign in to rate', 'error'); return; }
+    document.querySelectorAll('#starRating button').forEach((b,i) => b.classList.toggle('lit', i < val));
+    showToast(`Rated ${val} star${val>1?'s':''}!`, 'success');
+    const p = DEMO_PHOTOS.find(x=>x.id===activePhotoId);
+    if (p) {
+      p.rating = Math.min(5, ((p.rating * p.ratingCount) + val) / (p.ratingCount + 1));
+      p.ratingCount++;
+    }
+  }
+
+  function showToast(msg, type='success') {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + type;
+    setTimeout(() => t.className = 'toast', 3000);
+  }
+
+  // Keyboard close
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePhotoModal(); });
+
+  // Init
+  loadPhotos();
+</script>
+</body>
+</html>
