@@ -1,62 +1,89 @@
 /**
- * Azure Cognitive Services — Computer Vision
- * Used for: auto-tagging, content moderation (adult/racy detection)
+ * Azure Computer Vision Service
+ * Uses @azure/ai-vision-image-analysis SDK
  */
-const { ComputerVisionClient } = require('@azure/cognitiveservices-computervision');
-const { ApiKeyCredentials }    = require('@azure/ms-rest-azure-js');
+const { ImageAnalysisClient } = require('@azure-rest/ai-vision-image-analysis');
+const { AzureKeyCredential } = require('@azure/core-auth');
 
-const VISION_KEY      = process.env.AZURE_VISION_KEY;
-const VISION_ENDPOINT = process.env.AZURE_VISION_ENDPOINT || 'https://PixoGram-vision.cognitiveservices.azure.com/';
+const VISION_KEY      = process.env.VISION_KEY;
+const VISION_ENDPOINT = process.env.VISION_ENDPOINT || 'https://pixogram-vision.cognitiveservices.azure.com/';
 
 let _client;
 
 function getClient() {
   if (!_client) {
-    _client = new ComputerVisionClient(
-      new ApiKeyCredentials({ inHeader: { 'Ocp-Apim-Subscription-Key': VISION_KEY } }),
-      VISION_ENDPOINT
+    if (!VISION_KEY) {
+      throw new Error('VISION_KEY environment variable not set');
+    }
+    _client = new ImageAnalysisClient(
+      VISION_ENDPOINT,
+      new AzureKeyCredential(VISION_KEY)
     );
   }
   return _client;
 }
 
-/**
- * Analyze an image by URL
- * Returns: { tags, adult, description }
- */
 async function analyzeImage(imageUrl) {
-  const client = getClient();
+  try {
+    const client = getClient();
+    const result = await client.path('/imageanalysis:analyze').post({
+      body: { url: imageUrl },
+      queryParameters: {
+        features: ['Caption', 'Tags', 'Adult'],
+        language: 'en',
+      },
+      contentType: 'application/json',
+    });
 
-  const result = await client.analyzeImage(imageUrl, {
-    visualFeatures: ['Tags', 'Adult', 'Description'],
-    language: 'en',
-  });
+    const body = result.body;
 
-  return {
-    tags: (result.tags || []).filter(t => t.confidence > 0.7),
-    adult: result.adult,
-    description: result.description?.captions?.[0]?.text,
-  };
+    return {
+      description: body.captionResult?.text || null,
+      confidence:  body.captionResult?.confidence || 0,
+      tags: (body.tagsResult?.values || [])
+        .filter(t => t.confidence > 0.7)
+        .map(t => ({ name: t.name, confidence: t.confidence })),
+      adult: {
+        isAdultContent: body.adultResult?.isAdultContent || false,
+        isRacyContent:  body.adultResult?.isRacyContent  || false,
+        adultScore:     body.adultResult?.adultScore     || 0,
+      },
+    };
+  } catch (err) {
+    console.warn('[vision] analyzeImage failed:', err.message);
+    return { description: null, tags: [], adult: { isAdultContent: false, isRacyContent: false } };
+  }
 }
 
-/**
- * Analyze image from buffer (upload via stream)
- */
 async function analyzeImageBuffer(buffer) {
-  const client = getClient();
-  const { Readable } = require('stream');
-  const stream = Readable.from(buffer);
+  try {
+    const client = getClient();
+    const result = await client.path('/imageanalysis:analyze').post({
+      body: buffer,
+      queryParameters: {
+        features: ['Caption', 'Tags', 'Adult'],
+        language: 'en',
+      },
+      contentType: 'application/octet-stream',
+    });
 
-  const result = await client.analyzeImageInStream(stream, {
-    visualFeatures: ['Tags', 'Adult'],
-    language: 'en',
-  });
+    const body = result.body;
 
-  return {
-    tags: (result.tags || []).filter(t => t.confidence > 0.7).map(t => ({ name: t.name, confidence: t.confidence })),
-    adult: result.adult,
-    isModerated: result.adult?.isAdultContent || result.adult?.isRacyContent,
-  };
+    return {
+      description: body.captionResult?.text || null,
+      tags: (body.tagsResult?.values || [])
+        .filter(t => t.confidence > 0.7)
+        .map(t => ({ name: t.name, confidence: t.confidence })),
+      adult: {
+        isAdultContent: body.adultResult?.isAdultContent || false,
+        isRacyContent:  body.adultResult?.isRacyContent  || false,
+      },
+      isModerated: body.adultResult?.isAdultContent || body.adultResult?.isRacyContent || false,
+    };
+  } catch (err) {
+    console.warn('[vision] analyzeImageBuffer failed:', err.message);
+    return { description: null, tags: [], adult: { isAdultContent: false, isRacyContent: false }, isModerated: false };
+  }
 }
 
 module.exports = { analyzeImage, analyzeImageBuffer };

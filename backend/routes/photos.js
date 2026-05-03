@@ -150,10 +150,15 @@ router.post('/',
       const thumbName = `thumbnails/${photoId}${getExt(req.file.mimetype)}`;
       const thumbUrl  = await blob.uploadBuffer(thumbName, req.file.buffer, req.file.mimetype);
 
+     // 3. Vision API (optional)
       let aiTags = [];
+      let autoDescription = '';
       try {
         const visionResult = await vision.analyzeImage(blobUrl);
         aiTags = visionResult.tags || [];
+        autoDescription = visionResult.description || '';
+        console.log('[vision] Description:', autoDescription);
+        console.log('[vision] Tags:', aiTags.map(t => t.name));
         const moderationPassed = !visionResult.adult?.isAdultContent && !visionResult.adult?.isRacyContent;
         if (!moderationPassed) {
           await blob.deleteBlob(blobName);
@@ -166,12 +171,13 @@ router.post('/',
 
       const allTags = [...new Set([...tagList, ...aiTags.map(t => t.name)])].slice(0, 20);
 
-      const photoDoc = {
+     const photoDoc = {
         id:          photoId,
         creatorId:   req.user.id,
         creatorName: req.user.displayName,
         title,
-        caption,
+        caption:     caption || autoDescription,
+        autoDescription,
         location,
         peoplePresent: people,
         tags: allTags,
