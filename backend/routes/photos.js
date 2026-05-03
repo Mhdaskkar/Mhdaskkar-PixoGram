@@ -159,8 +159,14 @@ router.post('/',
   ],
   validate,
   async (req, res, next) => {
-    try {
+  try {
+      console.log('[photos] POST received');
+      console.log('[photos] req.file:', req.file ? req.file.originalname : 'MISSING');
+      console.log('[photos] buffer:', req.file?.buffer ? req.file.buffer.length + ' bytes' : 'UNDEFINED');
+      console.log('[photos] body:', req.body);
+
       if (!req.file) return res.status(400).json({ error: 'Image file required' });
+      if (!req.file.buffer) return res.status(400).json({ error: 'File buffer is empty' });
 
       const photoId = randomUUID();
       const { title, caption='', location='', tags='', peoplePresent='' } = req.body;
@@ -174,10 +180,9 @@ router.post('/',
       const blobName   = `originals/${photoId}${getExt(req.file.mimetype)}`;
       const blobUrl    = await blob.uploadBuffer(blobName, req.file.buffer, req.file.mimetype);
 
-      // 2. Generate thumbnail with Sharp
-      const thumbBuffer = await generateThumbnail(req.file.buffer, 600, 400);
-      const thumbName   = `thumbnails/${photoId}.jpg`;
-      const thumbUrl    = await blob.uploadBuffer(thumbName, thumbBuffer, 'image/jpeg');
+    // 2. Use original as thumbnail (skip Sharp for now)
+      const thumbName = `thumbnails/${photoId}.jpg`;
+      const thumbUrl  = await blob.uploadBuffer(thumbName, req.file.buffer, req.file.mimetype);
 
       // 3. Azure Cognitive Services â€” content moderation + auto-tags
       let aiTags = [];
