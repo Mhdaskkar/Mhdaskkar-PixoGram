@@ -992,6 +992,10 @@ async function publishPhoto() {
     const validFiles = selectedFiles.filter(Boolean);
     const token = localStorage.getItem('Pixogram_token');
 
+    console.log('Token:', token);
+    console.log('Files:', validFiles.length);
+    console.log('Title:', title);
+
     if (!token) { showToast('Please log in first.', 'error'); window.location.href = 'index.html'; return; }
     if (!validFiles.length) { showToast('Please select at least one photo.', 'error'); return; }
     if (!title) { showToast('Please enter a title.', 'error'); return; }
