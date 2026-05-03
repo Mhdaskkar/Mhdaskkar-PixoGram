@@ -14,12 +14,7 @@
       --sidebar: 260px;
     }
     body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--ink); }
-    header {
-      position: sticky; top: 0; z-index: 200;
-      background: var(--ink); color: var(--cream);
-      display: flex; align-items: center; justify-content: space-between;
-      padding: .9rem 2rem; gap: 1rem;
-    }
+    header { position: sticky; top: 0; z-index: 200; background: var(--ink); color: var(--cream); display: flex; align-items: center; justify-content: space-between; padding: .9rem 2rem; gap: 1rem; }
     .logo { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--cream); text-decoration: none; white-space: nowrap; }
     .logo span { color: var(--gold); font-style: italic; }
     .search-bar { flex: 1; max-width: 540px; display: flex; align-items: center; background: rgba(255,255,255,.1); border-radius: 6px; overflow: hidden; }
@@ -181,7 +176,6 @@
   </main>
 </div>
 
-<!-- PHOTO DETAIL MODAL -->
 <div class="modal-overlay" id="photoModal">
   <div class="photo-modal" style="position:relative">
     <button class="modal-close-btn" onclick="closePhotoModal()">✕</button>
@@ -221,6 +215,7 @@
   let activeTag = '';
   let activePhotoId = null;
   let activePhotoData = null;
+  let allPhotosCache = [];
   let searchTimeout;
 
   const token = localStorage.getItem('Pixogram_token');
@@ -309,8 +304,10 @@
         thumbUrl:     p.thumbUrl,
         blobUrl:      p.blobUrl,
         height:       220,
-        raw:          p
       }));
+
+      // Cache for modal use — no single photo API call needed
+      allPhotosCache = photos;
 
       const title = q ? `Results for "${q}"` : activeTag ? `${activeTag} Photos` : 'Discover Photos';
       document.getElementById('feedTitle').textContent = title;
@@ -333,39 +330,37 @@
   function doSearch() { loadPhotos(); }
   function debounceSearch() { clearTimeout(searchTimeout); searchTimeout = setTimeout(loadPhotos, 350); }
 
+  // Use cached data — no single photo API call
   async function openPhotoModal(id) {
-    try {
-      const res = await fetch(API_BASE + '/photos/' + id);
-      const p = await res.json();
-      activePhotoId = id;
-      activePhotoData = p;
+    const p = allPhotosCache.find(x => x.id === id);
+    if (!p) { showToast('Photo not found', 'error'); return; }
 
-      document.getElementById('modalTitle').textContent = p.title;
-      document.getElementById('modalCaption').textContent = p.caption || '';
+    activePhotoId = id;
+    activePhotoData = p;
 
-      const meta = document.getElementById('modalMeta');
-      meta.innerHTML = `
-        ${p.location ? `<span class="modal-meta-item">📍 ${p.location}</span>` : ''}
-        <span class="modal-meta-item">👤 ${p.creatorName}</span>
-        <span class="modal-meta-item">⭐ ${(p.averageRating||0).toFixed(1)} (${p.ratingCount||0} ratings)</span>
-        ${p.tags?.length ? `<span class="modal-meta-item">🏷️ ${p.tags.join(', ')}</span>` : ''}
-      `;
+    document.getElementById('modalTitle').textContent = p.title;
+    document.getElementById('modalCaption').textContent = p.caption || '';
 
-      const imgSide = document.getElementById('modalImgSide');
-      if (p.blobUrl) {
-        imgSide.innerHTML = `<img src="${p.blobUrl}" style="width:100%;height:100%;object-fit:cover;min-height:400px;" />`;
-      } else {
-        imgSide.innerHTML = `<div class="modal-img-placeholder" style="background:#1a1410;min-height:400px;font-size:5rem;opacity:.5;display:flex;align-items:center;justify-content:center;">📷</div>`;
-      }
+    const meta = document.getElementById('modalMeta');
+    meta.innerHTML = `
+      ${p.location ? `<span class="modal-meta-item">📍 ${p.location}</span>` : ''}
+      <span class="modal-meta-item">👤 ${p.creator}</span>
+      <span class="modal-meta-item">⭐ ${(p.rating||0).toFixed(1)} (${p.ratingCount||0} ratings)</span>
+      ${p.tags?.length ? `<span class="modal-meta-item">🏷️ ${p.tags.join(', ')}</span>` : ''}
+    `;
 
-      document.querySelectorAll('#starRating button').forEach(b => b.classList.remove('lit'));
-      await loadComments(id);
-
-      document.getElementById('photoModal').classList.add('active');
-      document.body.style.overflow = 'hidden';
-    } catch(e) {
-      console.error('Failed to open photo:', e);
+    const imgSide = document.getElementById('modalImgSide');
+    if (p.blobUrl) {
+      imgSide.innerHTML = `<img src="${p.blobUrl}" style="width:100%;height:100%;object-fit:cover;min-height:400px;" />`;
+    } else {
+      imgSide.innerHTML = `<div style="background:#1a1410;min-height:400px;display:flex;align-items:center;justify-content:center;font-size:5rem;opacity:.5;">📷</div>`;
     }
+
+    document.querySelectorAll('#starRating button').forEach(b => b.classList.remove('lit'));
+    await loadComments(id);
+
+    document.getElementById('photoModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
   }
 
   function closePhotoModal() {
@@ -414,7 +409,8 @@
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         body: JSON.stringify({ text })
       });
-      if (!res.ok) throw new Error('Failed to post comment');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to post comment');
       input.value = '';
       showToast('Comment posted!', 'success');
       await loadComments(activePhotoId);
@@ -427,14 +423,16 @@
     if (!token) { showToast('Please sign in to rate', 'error'); return; }
     document.querySelectorAll('#starRating button').forEach((b, i) => b.classList.toggle('lit', i < val));
     try {
-      await fetch(API_BASE + '/photos/' + activePhotoId + '/ratings', {
+      const res = await fetch(API_BASE + '/photos/' + activePhotoId + '/ratings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
         body: JSON.stringify({ rating: val })
       });
-      showToast(`Rated ${val} star${val > 1 ? 's' : ''}!`, 'success');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Rating failed');
+      showToast(`Rated ${val} star${val > 1 ? 's' : ''}! Average: ${data.newAverage}`, 'success');
     } catch(e) {
-      showToast('Rating failed', 'error');
+      showToast(e.message, 'error');
     }
   }
 
