@@ -1,12 +1,12 @@
-﻿/**
+/**
  * Azure Cosmos DB Service
- * NoSQL â€” partitioned containers for photos, comments, ratings, users
+ * Updated to match Azure container names: Users, Photos, Comments, Ratings
  */
 const { CosmosClient } = require('@azure/cosmos');
 
-const endpoint = process.env.COSMOS_ENDPOINT || 'https://pixora.documents.azure.com:443/';
-const key      = process.env.COSMOS_KEY;       // loaded from Key Vault in production
-const dbName   = process.env.COSMOS_DB_NAME || 'pixoradb';
+const endpoint = process.env.COSMOS_ENDPOINT;
+const key      = process.env.COSMOS_KEY;
+const dbName   = process.env.COSMOS_DB_NAME || 'PixoGram';
 
 let _client, _db, _containers;
 
@@ -17,7 +17,11 @@ function getClient() {
       key,
       connectionPolicy: {
         requestTimeout: 10000,
-        retryOptions: { maxRetryAttemptCount: 3, fixedRetryIntervalInMilliseconds: 500, maxWaitTimeInSeconds: 10 },
+        retryOptions: {
+          maxRetryAttemptCount: 3,
+          fixedRetryIntervalInMilliseconds: 500,
+          maxWaitTimeInSeconds: 10,
+        },
       },
     });
   }
@@ -33,23 +37,16 @@ function getContainers() {
   if (!_containers) {
     const db = getDb();
     _containers = {
-      Photos:   db.container('Photos'),    // partitionKey: /id
-      Comments: db.container('Comments'),  // partitionKey: /photoId
+      Users:    db.container('Users'),
+      Photos:   db.container('Photos'),
+      Comments: db.container('Comments'),
       Ratings:  db.container('Ratings'),
     };
-    console.log('[cosmos] containers keys:', Object.keys(_containers));
-    return _containers;
-  if (false) {   // partitionKey: /photoId
-      Users:    db.container('Users'),     // partitionKey: /id
-    };
+    console.log('[cosmos] Containers initialised:', Object.keys(_containers));
   }
   return _containers;
 }
 
-/**
- * Cascade delete all documents where c.photoId === photoId
- * Used when a photo is deleted to clean up comments & ratings
- */
 async function deleteByPhotoId(containerName, photoId) {
   const container = getContainers()[containerName];
   const { resources } = await container.items.query({
@@ -57,30 +54,22 @@ async function deleteByPhotoId(containerName, photoId) {
     parameters: [{ name: '@photoId', value: photoId }],
   }).fetchAll();
 
-  // Delete in batches of 10
-  const batches = [];
   for (let i = 0; i < resources.length; i += 10) {
-    batches.push(resources.slice(i, i + 10));
-  }
-  for (const batch of batches) {
     await Promise.allSettled(
-      batch.map(doc => container.item(doc.id, photoId).delete())
+      resources.slice(i, i + 10).map(doc => container.item(doc.id, photoId).delete())
     );
   }
 }
 
-/**
- * Initialize database and containers (run at startup or deployment)
- */
 async function initDatabase() {
   const client = getClient();
   const { database } = await client.databases.createIfNotExists({ id: dbName });
 
   const containerDefs = [
-    { id: 'photos',   partitionKey: { paths: ['/id'] },      defaultTtl: -1 },
-    { id: 'comments', partitionKey: { paths: ['/photoId'] }, defaultTtl: -1 },
-    { id: 'ratings',  partitionKey: { paths: ['/photoId'] }, defaultTtl: -1 },
-    { id: 'users',    partitionKey: { paths: ['/id'] },      defaultTtl: -1 },
+    { id: 'Users',    partitionKey: { paths: ['/id'] },      defaultTtl: -1 },
+    { id: 'Photos',   partitionKey: { paths: ['/id'] },      defaultTtl: -1 },
+    { id: 'Comments', partitionKey: { paths: ['/photoId'] }, defaultTtl: -1 },
+    { id: 'Ratings',  partitionKey: { paths: ['/photoId'] }, defaultTtl: -1 },
   ];
 
   for (const def of containerDefs) {
@@ -97,5 +86,3 @@ module.exports = {
   deleteByPhotoId,
   initDatabase,
 };
-
-

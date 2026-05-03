@@ -1,12 +1,4 @@
-﻿/** photo
- * Photos Router
- * GET    /v1/photos          â€” list/search (public)
- * GET    /v1/photos/:id      â€” single photo (public)
- * POST   /v1/photos          â€” upload (creator only)
- * PATCH  /v1/photos/:id      â€” update metadata (creator, owner)
- * DELETE /v1/photos/:id      â€” delete (creator, owner)
- */
-const express  = require('express');
+﻿const express  = require('express');
 const multer   = require('multer');
 const { randomUUID } = require('crypto');
 const { body, query, param, validationResult } = require('express-validator');
@@ -19,13 +11,11 @@ const cosmos  = require('../services/cosmos');
 const blob    = require('../services/blob');
 const redis   = require('../services/redis');
 const vision  = require('../services/vision');
-const { generateThumbnail } = require('../utils/thumbnail');
 
-// â”€â”€ MULTER (in-memory storage, then stream to Azure Blob) â”€â”€
 const storage = multer.memoryStorage();
 const upload  = multer({
   storage,
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
+  limits: { fileSize: 20 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ['image/jpeg', 'image/png', 'image/webp'];
     if (allowed.includes(file.mimetype)) cb(null, true);
@@ -33,30 +23,22 @@ const upload  = multer({
   },
 });
 
-// Upload-specific rate limiter
 const uploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
+  windowMs: 60 * 60 * 1000,
   max: 20,
   keyGenerator: (req) => req.user?.id || req.ip,
   message: { error: 'Upload limit (20/hour) reached.' },
 });
 
-// â”€â”€ HELPERS â”€â”€
 const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
   next();
 };
 
-const CACHE_TTL = {
-  feed:   300,  // 5 min
-  search: 120,  // 2 min
-  photo:  600,  // 10 min
-};
+const CACHE_TTL = { feed: 300, search: 120, photo: 600 };
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// GET /v1/photos â€” list / search
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GET /v1/photos ──────────────────────────────────────────────────────────
 router.get('/',
   optionalAuth, attachUserInfo,
   [
@@ -73,25 +55,20 @@ router.get('/',
   async (req, res, next) => {
     try {
       const { q, location, tags, creatorId, minRating, sort='recent', page=1, limit=20 } = req.query;
-
-      // Build cache key
       const cacheKey = `feed:${JSON.stringify({ q, location, tags, creatorId, minRating, sort, page, limit })}`;
 
-      // Try Redis cache
       const cached = await redis.get(cacheKey);
       if (cached) return res.json(JSON.parse(cached));
 
-      // Query Cosmos DB
       const offset = (page - 1) * limit;
-      let querySpec = buildSearchQuery({ q, location, tags, creatorId, minRating, sort, offset, limit });
+      const querySpec = buildSearchQuery({ q, location, tags, creatorId, minRating, sort, offset, limit });
 
-      const { resources: photos, hasMoreResults } = await cosmos.containers.photos
+      const { resources: photos } = await cosmos.container('Photos')
         .items.query(querySpec, { maxItemCount: limit })
         .fetchNext();
 
-      // Total count (lightweight query)
       const countSpec = buildCountQuery({ q, location, tags, creatorId, minRating });
-      const { resources: [countResult] } = await cosmos.containers.photos
+      const { resources: [countResult] } = await cosmos.container('Photos')
         .items.query(countSpec).fetchAll();
       const total = countResult?.count || 0;
 
@@ -100,27 +77,17 @@ router.get('/',
         pagination: { page, limit, total, pages: Math.ceil(total / limit) },
       };
 
-      // Cache result
       const ttl = q ? CACHE_TTL.search : CACHE_TTL.feed;
       await redis.setex(cacheKey, ttl, JSON.stringify(result));
 
       res.json(result);
-    } //catch (err) {
-      //next(err);
-    //}
-    catch (err) {
-  console.error("FULL ERROR:", err);
-  res.status(500).json({
-    error: err.message,
-    stack: err.stack
-  });
-}
+    } catch (err) {
+      next(err);
+    }
   }
 );
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// GET /v1/photos/:id â€” single photo
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── GET /v1/photos/:id ──────────────────────────────────────────────────────
 router.get('/:id',
   [param('id').isUUID()], validate,
   optionalAuth, attachUserInfo,
@@ -132,7 +99,7 @@ router.get('/:id',
       const cached = await redis.get(cacheKey);
       if (cached) return res.json(JSON.parse(cached));
 
-      const { resource: photo } = await cosmos.containers.photos.item(id, id).read();
+      const { resource: photo } = await cosmos.container('Photos').item(id, id).read();
       if (!photo) return res.status(404).json({ error: 'Photo not found' });
 
       await redis.setex(cacheKey, CACHE_TTL.photo, JSON.stringify(photo));
@@ -143,9 +110,7 @@ router.get('/:id',
   }
 );
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// POST /v1/photos â€” upload photo (creator only)
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── POST /v1/photos ─────────────────────────────────────────────────────────
 router.post('/',
   requireAuth, attachUserInfo, isCreator,
   uploadLimiter,
@@ -159,12 +124,7 @@ router.post('/',
   ],
   validate,
   async (req, res, next) => {
-  try {
-      console.log('[photos] POST received');
-      console.log('[photos] req.file:', req.file ? req.file.originalname : 'MISSING');
-      console.log('[photos] buffer:', req.file?.buffer ? req.file.buffer.length + ' bytes' : 'UNDEFINED');
-      console.log('[photos] body:', req.body);
-
+    try {
       if (!req.file) return res.status(400).json({ error: 'Image file required' });
       if (!req.file.buffer) return res.status(400).json({ error: 'File buffer is empty' });
 
@@ -176,33 +136,29 @@ router.post('/',
         ? peoplePresent.split(',').map(p => p.trim()).filter(Boolean)
         : (Array.isArray(peoplePresent) ? peoplePresent : []);
 
-      // 1. Upload original to Azure Blob
-      const blobName   = `originals/${photoId}${getExt(req.file.mimetype)}`;
-      const blobUrl    = await blob.uploadBuffer(blobName, req.file.buffer, req.file.mimetype);
+      // 1. Upload to Azure Blob
+      const blobName = `originals/${photoId}${getExt(req.file.mimetype)}`;
+      const blobUrl  = await blob.uploadBuffer(blobName, req.file.buffer, req.file.mimetype);
 
-    // 2. Use original as thumbnail (skip Sharp for now)
-      const thumbName = `thumbnails/${photoId}.jpg`;
+      // 2. Upload thumbnail
+      const thumbName = `thumbnails/${photoId}${getExt(req.file.mimetype)}`;
       const thumbUrl  = await blob.uploadBuffer(thumbName, req.file.buffer, req.file.mimetype);
 
-      // 3. Azure Cognitive Services â€” content moderation + auto-tags
+      // 3. Vision API (optional)
       let aiTags = [];
-      let moderationPassed = true;
       try {
         const visionResult = await vision.analyzeImage(blobUrl);
         aiTags = visionResult.tags || [];
-        moderationPassed = !visionResult.adult?.isAdultContent && !visionResult.adult?.isRacyContent;
+        const moderationPassed = !visionResult.adult?.isAdultContent && !visionResult.adult?.isRacyContent;
+        if (!moderationPassed) {
+          await blob.deleteBlob(blobName);
+          await blob.deleteBlob(thumbName);
+          return res.status(422).json({ error: 'Content moderation check failed.' });
+        }
       } catch (visionErr) {
         console.warn('Vision API failed, skipping:', visionErr.message);
       }
 
-      if (!moderationPassed) {
-        // Delete uploaded blobs
-        await blob.deleteBlob(blobName);
-        await blob.deleteBlob(thumbName);
-        return res.status(422).json({ error: 'Content moderation check failed. This image violates our community guidelines.' });
-      }
-
-      // Merge user tags with AI-detected tags (deduplicated)
       const allTags = [...new Set([...tagList, ...aiTags.map(t => t.name)])].slice(0, 20);
 
       // 4. Save to Cosmos DB
@@ -224,15 +180,10 @@ router.post('/',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-        console.log('[photos] cosmos.containers:', Object.keys(cosmos.containers));
-        console.log('[photos] cosmos.containers.Photos:', cosmos.containers.Photos);
-     console.log('[photos] containers available:', JSON.stringify(Object.keys(cosmos.containers)));
-      console.log('[photos] Photos container:', typeof cosmos.containers.Photos);
-      console.log('[photos] saving to cosmos...');
-      const photosContainer = cosmos.container('Photos');
-      console.log('[photos] container:', typeof photosContainer);
-      await photosContainer.items.create(photoDoc);
-      console.log('[photos] saved!');
+
+      console.log('[photos] Saving to Cosmos...');
+      await cosmos.container('Photos').items.create(photoDoc);
+      console.log('[photos] Saved successfully!');
 
       // 5. Invalidate feed cache
       await redis.deletePattern('feed:*');
@@ -244,9 +195,7 @@ router.post('/',
   }
 );
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// PATCH /v1/photos/:id â€” update metadata
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── PATCH /v1/photos/:id ────────────────────────────────────────────────────
 router.patch('/:id',
   requireAuth, attachUserInfo, isCreator,
   [
@@ -261,7 +210,7 @@ router.patch('/:id',
   async (req, res, next) => {
     try {
       const { id } = req.params;
-      const { resource: photo } = await cosmos.containers.photos.item(id, id).read();
+      const { resource: photo } = await cosmos.container('Photos').item(id, id).read();
       if (!photo) return res.status(404).json({ error: 'Photo not found' });
       if (photo.creatorId !== req.user.id) return res.status(403).json({ error: 'Not the owner of this photo' });
 
@@ -271,9 +220,8 @@ router.patch('/:id',
       });
       photo.updatedAt = new Date().toISOString();
 
-      const { resource: updated } = await cosmos.containers.photos.item(id, id).replace(photo);
+      const { resource: updated } = await cosmos.container('Photos').item(id, id).replace(photo);
 
-      // Invalidate caches
       await redis.del(`photo:${id}`);
       await redis.deletePattern('feed:*');
 
@@ -284,20 +232,17 @@ router.patch('/:id',
   }
 );
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-// DELETE /v1/photos/:id
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── DELETE /v1/photos/:id ───────────────────────────────────────────────────
 router.delete('/:id',
   requireAuth, attachUserInfo, isCreator,
   [param('id').isUUID()], validate,
   async (req, res, next) => {
     try {
       const { id } = req.params;
-      const { resource: photo } = await cosmos.containers.photos.item(id, id).read();
+      const { resource: photo } = await cosmos.container('Photos').item(id, id).read();
       if (!photo) return res.status(404).json({ error: 'Photo not found' });
       if (photo.creatorId !== req.user.id) return res.status(403).json({ error: 'Not the owner' });
 
-      // Delete blobs
       const blobName  = photo.blobUrl.split('/').slice(-2).join('/');
       const thumbName = photo.thumbUrl.split('/').slice(-2).join('/');
       await Promise.allSettled([
@@ -305,14 +250,10 @@ router.delete('/:id',
         blob.deleteBlob(thumbName),
       ]);
 
-      // Delete Cosmos document
-      await cosmos.containers.photos.item(id, id).delete();
+      await cosmos.container('Photos').item(id, id).delete();
+      await cosmos.deleteByPhotoId('Comments', id);
+      await cosmos.deleteByPhotoId('Ratings', id);
 
-      // Cascade delete: comments + ratings
-      await cosmos.deleteByPhotoId('comments', id);
-      await cosmos.deleteByPhotoId('ratings', id);
-
-      // Invalidate caches
       await redis.del(`photo:${id}`);
       await redis.deletePattern('feed:*');
 
@@ -323,7 +264,7 @@ router.delete('/:id',
   }
 );
 
-// â”€â”€ HELPERS â”€â”€
+// ── HELPERS ─────────────────────────────────────────────────────────────────
 function getExt(mimetype) {
   return { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' }[mimetype] || '.jpg';
 }
@@ -358,8 +299,8 @@ function buildSearchQuery({ q, location, tags, creatorId, minRating, sort, offse
 
   const orderMap = { recent: 'c.createdAt DESC', rating: 'c.averageRating DESC', comments: 'c.commentCount DESC' };
   const orderBy  = orderMap[sort] || orderMap.recent;
+  const where    = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
 
-  const where = conditions.length ? 'WHERE ' + conditions.join(' AND ') : '';
   return {
     query: `SELECT * FROM c ${where} ORDER BY ${orderBy} OFFSET ${offset} LIMIT ${limit}`,
     parameters: params,
@@ -373,5 +314,3 @@ function buildCountQuery({ q, location, tags, creatorId, minRating }) {
 }
 
 module.exports = router;
-
-
