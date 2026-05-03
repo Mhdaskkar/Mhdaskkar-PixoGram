@@ -1,8 +1,7 @@
-
 const express  = require('express');
 const router   = express.Router();
 const bcrypt   = require('bcryptjs');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 const { body, validationResult } = require('express-validator');
 const { requireAuth, attachUserInfo, signToken } = require('../middleware/auth');
 const cosmos = require('../services/cosmos');
@@ -22,15 +21,15 @@ router.post('/register',
   async (req, res, next) => {
     try {
       const { email, password, displayName, role = 'consumer' } = req.body;
-      const { resources } = await cosmos.containers.Users.items
+      const { resources } = await cosmos.container('Users').items
         .query({ query: 'SELECT * FROM c WHERE c.email = @email', parameters: [{ name: '@email', value: email }] })
         .fetchAll();
       if (resources.length > 0) return res.status(409).json({ error: 'Email already registered.' });
       const passwordHash = await bcrypt.hash(password, 12);
-      const userId = uuidv4();
+      const userId = randomUUID();
       const now = new Date().toISOString();
       const newUser = { id: userId, email, passwordHash, displayName: displayName || email.split('@')[0], role, createdAt: now, updatedAt: now };
-      await cosmos.containers.Users.items.create(newUser);
+      await cosmos.container('Users').items.create(newUser);
       const token = signToken({ sub: userId, email, displayName: newUser.displayName, role });
       res.status(201).json({ message: 'Account created.', token, user: { id: userId, email, displayName: newUser.displayName, role } });
     } catch (err) { next(err); }
@@ -44,7 +43,7 @@ router.post('/login',
   async (req, res, next) => {
     try {
       const { email, password } = req.body;
-      const { resources } = await cosmos.containers.Users.items
+      const { resources } = await cosmos.container('Users').items
         .query({ query: 'SELECT * FROM c WHERE c.email = @email', parameters: [{ name: '@email', value: email }] })
         .fetchAll();
       if (resources.length === 0) return res.status(401).json({ error: 'Invalid email or password.' });
@@ -73,6 +72,3 @@ router.get('/profile', requireAuth, attachUserInfo, (req, res) => {
 });
 
 module.exports = router;
-'@
-
-$auth | Set-Content backend\routes\auth.js -Encoding UTF8
