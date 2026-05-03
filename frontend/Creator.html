@@ -987,68 +987,58 @@
   }
 
   /* â”€â”€ Publish â”€â”€ */
-  function publishPhoto() {
+async function publishPhoto() {
     const title = document.getElementById('title').value.trim();
     const validFiles = selectedFiles.filter(Boolean);
+    const token = localStorage.getItem('Pixogram_token');
 
+    if (!token) { showToast('Please log in first.', 'error'); window.location.href = 'index.html'; return; }
     if (!validFiles.length) { showToast('Please select at least one photo.', 'error'); return; }
     if (!title) { showToast('Please enter a title.', 'error'); return; }
 
     const btn = document.getElementById('publishBtn');
     btn.disabled = true;
-    btn.innerHTML = '<div class="spinner"></div> Publishingâ€¦';
-    document.getElementById('panelStatus').textContent = 'Uploadingâ€¦';
+    btn.innerHTML = '<div class="spinner"></div> Publishing...';
+    document.getElementById('panelStatus').textContent = 'Uploading...';
     document.getElementById('panelStatus').style.color = 'var(--accent)';
 
-    // Simulated upload progress
     const prog = document.getElementById('uploadProgress');
     const fill = document.getElementById('progressFill');
     const pct  = document.getElementById('progressPct');
     prog.classList.add('visible');
+    fill.style.width = '30%';
+    pct.textContent = '30%';
 
-    let p = 0;
-    const iv = setInterval(() => {
-      p += Math.random() * 14;
-      if (p >= 100) { p = 100; clearInterval(iv); onUploadComplete(); }
-      fill.style.width = p.toFixed(0) + '%';
-      pct.textContent  = p.toFixed(0) + '%';
-    }, 180);
-  }
+    try {
+      const formData = new FormData();
+      formData.append('image', validFiles[0]);
+      formData.append('title', title);
+      formData.append('caption', document.getElementById('caption').value.trim());
+      formData.append('location', document.getElementById('location').value.trim());
+      formData.append('tags', tags.join(','));
 
-  function onUploadComplete() {
-    document.getElementById('panelStatus').textContent = 'Published';
-    document.getElementById('panelStatus').style.color = 'var(--success)';
-    showToast('Photo published successfully!', 'success');
-    const btn = document.getElementById('publishBtn');
-    btn.disabled = false;
-    btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Publish`;
+      fill.style.width = '60%';
+      pct.textContent = '60%';
 
-    // Add to recent list
-    const title = document.getElementById('title').value.trim();
-    addRecentItem(title);
-  }
+      const res = await fetch(API_BASE + '/photos', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + token },
+        body: formData
+      });
 
-  function addRecentItem(title) {
-    const list = document.getElementById('recentList');
-    const item = document.createElement('div');
-    item.className = 'recent-item';
-    item.style.animation = 'popIn 0.3s ease';
-    item.innerHTML = `
-      <div class="recent-thumb">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-      </div>
-      <div class="recent-info">
-        <div class="recent-name">${title}</div>
-        <div class="recent-meta">Just now</div>
-      </div>
-      <span class="recent-status status-live">Live</span>`;
-    list.insertBefore(item, list.firstChild);
-  }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Upload failed');
 
-  function saveDraft() {
-    showToast('Draft saved to Azure Blob Storage.', 'success');
-    document.getElementById('panelStatus').textContent = 'Draft Saved';
-    document.getElementById('panelStatus').style.color = 'var(--muted)';
+      fill.style.width = '100%';
+      pct.textContent = '100%';
+      onUploadComplete(data.title || title);
+    } catch(e) {
+      showToast(e.message || 'Upload failed', 'error');
+      btn.disabled = false;
+      btn.innerHTML = 'Publish';
+      document.getElementById('panelStatus').textContent = 'Error';
+      document.getElementById('panelStatus').style.color = 'var(--danger)';
+    }
   }
 
   function resetForm() {
@@ -1093,4 +1083,5 @@
 </script>
 </body>
 </html>
+
 
