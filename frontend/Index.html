@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -32,7 +32,7 @@
       flex-direction: column;
     }
 
-    /* ── NAV ── */
+    /* â”€â”€ NAV â”€â”€ */
     nav {
       display: flex;
       align-items: center;
@@ -81,7 +81,7 @@
     }
     .btn-gold:hover { background: #b8923d; }
 
-    /* ── HERO ── */
+    /* â”€â”€ HERO â”€â”€ */
     .hero {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -177,7 +177,7 @@
       font-weight: 500;
     }
 
-    /* ── ROLE CARDS ── */
+    /* â”€â”€ ROLE CARDS â”€â”€ */
     .roles-section {
       padding: 6rem 4rem;
       background: var(--ink);
@@ -225,13 +225,13 @@
       position: relative;
     }
     .role-card ul li::before {
-      content: '→';
+      content: 'â†’';
       position: absolute; left: 0;
       color: var(--gold);
       font-size: .75rem;
     }
 
-    /* ── STATS STRIP ── */
+    /* â”€â”€ STATS STRIP â”€â”€ */
     .stats-strip {
       background: var(--gold);
       padding: 2rem 4rem;
@@ -254,7 +254,7 @@
       color: rgba(13,13,13,.6);
     }
 
-    /* ── FEATURES ── */
+    /* â”€â”€ FEATURES â”€â”€ */
     .features-section {
       padding: 6rem 4rem;
       background: var(--cream);
@@ -280,7 +280,7 @@
     .feature h4 { font-family: 'Playfair Display', serif; margin-bottom: .5rem; font-size: 1.1rem; }
     .feature p { font-size: .88rem; color: var(--muted); line-height: 1.65; font-weight: 300; }
 
-    /* ── FOOTER ── */
+    /* â”€â”€ FOOTER â”€â”€ */
     footer {
       padding: 2rem 4rem;
       background: var(--ink);
@@ -293,7 +293,7 @@
     }
     footer .logo { font-size: 1.2rem; }
 
-    /* ── AUTH MODAL ── */
+    /* â”€â”€ AUTH MODAL â”€â”€ */
     .modal-overlay {
       display: none;
       position: fixed; inset: 0;
@@ -482,20 +482,20 @@
   <div class="stat"><div class="stat-num">12K+</div><div class="stat-label">Photos</div></div>
   <div class="stat"><div class="stat-num">850+</div><div class="stat-label">Creators</div></div>
   <div class="stat"><div class="stat-num">45K+</div><div class="stat-label">Members</div></div>
-  <div class="stat"><div class="stat-num">4.8★</div><div class="stat-label">Avg Rating</div></div>
+  <div class="stat"><div class="stat-num">4.8â˜…</div><div class="stat-label">Avg Rating</div></div>
 </div>
 </section>
 
 <footer>
   <a href="/" class="logo" style="color:rgba(245,240,232,.6)">Pix<span style="color:var(--gold);font-style:italic">ora</span></a>
-  <span>© 2024 Pixogram. Cloud-native photo sharing on Azure.</span>
-  <span>Privacy · Terms · Contact</span>
+  <span>Â© 2024 Pixogram. Cloud-native photo sharing on Azure.</span>
+  <span>Privacy Â· Terms Â· Contact</span>
 </footer>
 
 <!-- AUTH MODAL -->
 <div class="modal-overlay" id="authModal">
   <div class="modal">
-    <button class="modal-close" onclick="closeModal()">✕</button>
+    <button class="modal-close" onclick="closeModal()">âœ•</button>
 
     <div class="tabs">
       <button class="tab-btn active" id="tabLogin" onclick="switchTab('login')">Sign In</button>
@@ -513,7 +513,7 @@
       </div>
       <div class="form-group" id="grpPassword">
         <label>Password</label>
-        <input type="password" id="loginPassword" placeholder="••••••••" />
+        <input type="password" id="loginPassword" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" />
         <span class="form-error">Password is required.</span>
       </div>
       <button class="btn btn-primary" style="width:100%;padding:.85rem;font-size:1rem;margin-top:.5rem;" onclick="handleLogin()">Sign In</button>
@@ -556,7 +556,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  // ── MODAL ──
+  // â”€â”€ MODAL â”€â”€
   function openModal(tab) {
     document.getElementById('authModal').classList.add('active');
     switchTab(tab || 'login');
@@ -576,7 +576,7 @@
     if (e.target === document.getElementById('authModal')) closeModal();
   });
 
-  // ── TOAST ──
+  // â”€â”€ TOAST â”€â”€
   function showToast(msg, type='success') {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -584,8 +584,8 @@
     setTimeout(() => t.className = 'toast', 3000);
   }
 
-  // ── AUTH (demo — in production use MSAL.js + AAD B2C) ──
-  const API_BASE = 'https://api.Pixogram.io/v1'; // Replace with actual API URL
+  // â”€â”€ AUTH (demo â€” in production use MSAL.js + AAD B2C) â”€â”€
+  const API_BASE = 'https://pixogram-api-a3cydhaface7h0g5.swedencentral-01.azurewebsites.net/v1'; // Replace with actual API URL
 
   async function handleLogin() {
     const email = document.getElementById('loginEmail').value.trim();
@@ -606,7 +606,7 @@
       localStorage.setItem('Pixogram_token', 'demo_jwt_' + Date.now());
       localStorage.setItem('Pixogram_role', role);
       localStorage.setItem('Pixogram_name', email.split('@')[0]);
-      showToast('Signed in! Redirecting…', 'success');
+      showToast('Signed in! Redirectingâ€¦', 'success');
       setTimeout(() => {
         window.location.href = role === 'creator' ? 'creator.html' : 'consumer.html';
       }, 900);
@@ -632,7 +632,7 @@
 
   function handleAzureLogin() {
     // In production: msalInstance.loginRedirect(loginRequest)
-    showToast('Redirecting to Microsoft Sign-In…', 'success');
+    showToast('Redirecting to Microsoft Sign-Inâ€¦', 'success');
     setTimeout(() => {
       // Simulate: set demo token, redirect to consumer
       localStorage.setItem('Pixogram_token', 'msal_demo_' + Date.now());

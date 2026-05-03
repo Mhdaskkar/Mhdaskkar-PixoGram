@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PixoGram — Creator Studio</title>
+  <title>PixoGram â€” Creator Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
 
@@ -35,7 +35,7 @@
       overflow-x: hidden;
     }
 
-    /* ── Grain overlay ── */
+    /* â”€â”€ Grain overlay â”€â”€ */
     body::before {
       content: '';
       position: fixed; inset: 0;
@@ -45,7 +45,7 @@
       opacity: 0.4;
     }
 
-    /* ── Header ── */
+    /* â”€â”€ Header â”€â”€ */
     header {
       display: flex;
       align-items: center;
@@ -103,7 +103,7 @@
     }
     .avatar:hover { border-color: var(--accent); }
 
-    /* ── Layout ── */
+    /* â”€â”€ Layout â”€â”€ */
     .app {
       display: grid;
       grid-template-columns: 260px 1fr 300px;
@@ -116,7 +116,7 @@
       to   { opacity:1; transform:translateY(0); }
     }
 
-    /* ── Sidebar ── */
+    /* â”€â”€ Sidebar â”€â”€ */
     .sidebar {
       border-right: 1px solid var(--border);
       padding: 32px 24px;
@@ -185,7 +185,7 @@
       border-radius: 2px;
     }
 
-    /* ── Main ── */
+    /* â”€â”€ Main â”€â”€ */
     main {
       padding: 36px 40px;
       overflow-y: auto;
@@ -204,7 +204,7 @@
       margin-bottom: 32px;
     }
 
-    /* ── Drop zone ── */
+    /* â”€â”€ Drop zone â”€â”€ */
     .drop-zone {
       border: 2px dashed var(--border-h);
       border-radius: 16px;
@@ -249,7 +249,7 @@
 
     #fileInput { display: none; }
 
-    /* ── Preview strip ── */
+    /* â”€â”€ Preview strip â”€â”€ */
     .preview-strip {
       display: flex;
       gap: 10px;
@@ -287,7 +287,7 @@
     }
     .preview-thumb:hover .remove-btn { opacity: 1; }
 
-    /* ── Form ── */
+    /* â”€â”€ Form â”€â”€ */
     .form-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -412,7 +412,7 @@
       cursor: pointer;
     }
 
-    /* ── Actions ── */
+    /* â”€â”€ Actions â”€â”€ */
     .form-actions {
       display: flex;
       gap: 12px;
@@ -468,7 +468,7 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ── Right panel ── */
+    /* â”€â”€ Right panel â”€â”€ */
     .panel {
       border-left: 1px solid var(--border);
       padding: 32px 24px;
@@ -588,7 +588,7 @@
     #toast .toast-icon.success { background: rgba(110,201,169,0.15); color: var(--success); }
     #toast .toast-icon.error   { background: rgba(224,96,96,0.15); color: var(--danger); }
 
-    /* ── Progress bar ── */
+    /* â”€â”€ Progress bar â”€â”€ */
     #uploadProgress {
       display: none;
       margin-top: 16px;
@@ -637,7 +637,7 @@
 </head>
 <body>
 
-<!-- ── Header ── -->
+<!-- â”€â”€ Header â”€â”€ -->
 <header>
   <div class="logo">PixoGram </div>
   <div class="header-right">
@@ -646,10 +646,10 @@
   </div>
 </header>
 
-<!-- ── App ── -->
+<!-- â”€â”€ App â”€â”€ -->
 <div class="app">
 
-  <!-- ── Sidebar ── -->
+  <!-- â”€â”€ Sidebar â”€â”€ -->
   <aside class="sidebar">
     <div class="sidebar-section-label">Creator Studio</div>
 
@@ -701,7 +701,7 @@
     </div>
   </aside>
 
-  <!-- ── Main content ── -->
+  <!-- â”€â”€ Main content â”€â”€ -->
   <main>
     <h1 class="page-title">Upload Photos</h1>
     <p class="page-subtitle">Share your work with the Pixo community. Supported formats: JPG, PNG, WEBP, HEIC.</p>
@@ -712,7 +712,7 @@
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       </div>
       <div class="drop-title">Drop your photos here</div>
-      <p class="drop-sub">or <a class="drop-link" onclick="event.stopPropagation();document.getElementById('fileInput').click()">browse files</a> from your device<br><span style="font-size:11px;color:var(--muted)">JPG · PNG · WEBP · HEIC &nbsp;·&nbsp; Max 25 MB per file</span></p>
+      <p class="drop-sub">or <a class="drop-link" onclick="event.stopPropagation();document.getElementById('fileInput').click()">browse files</a> from your device<br><span style="font-size:11px;color:var(--muted)">JPG Â· PNG Â· WEBP Â· HEIC &nbsp;Â·&nbsp; Max 25 MB per file</span></p>
       <input type="file" id="fileInput" accept="image/*" multiple />
     </div>
 
@@ -722,7 +722,7 @@
     <!-- Progress bar -->
     <div id="uploadProgress">
       <div class="progress-label">
-        <span id="progressLabel">Uploading to Azure Blob Storage…</span>
+        <span id="progressLabel">Uploading to Azure Blob Storageâ€¦</span>
         <span id="progressPct">0%</span>
       </div>
       <div class="progress-bg">
@@ -740,7 +740,7 @@
 
       <div class="form-group full">
         <label>Caption</label>
-        <textarea id="caption" placeholder="Tell the story behind this photo…" maxlength="500" oninput="updateCharCount(this,'captionCount',500)"></textarea>
+        <textarea id="caption" placeholder="Tell the story behind this photoâ€¦" maxlength="500" oninput="updateCharCount(this,'captionCount',500)"></textarea>
         <div class="char-count"><span id="captionCount">0</span> / 500</div>
       </div>
 
@@ -757,7 +757,7 @@
       <div class="form-group full">
         <label>People Tagged</label>
         <div class="tags-input-wrap" id="tagsWrap">
-          <input type="text" id="tagInput" placeholder="Type a name and press Enter…" />
+          <input type="text" id="tagInput" placeholder="Type a name and press Enterâ€¦" />
         </div>
       </div>
 
@@ -782,13 +782,13 @@
         <label>Visibility</label>
         <div class="toggle-group">
           <div class="toggle-opt selected" data-val="public" onclick="selectVisibility(this)">
-            🌐 Public
+            ðŸŒ Public
           </div>
           <div class="toggle-opt" data-val="followers" onclick="selectVisibility(this)">
-            👥 Followers
+            ðŸ‘¥ Followers
           </div>
           <div class="toggle-opt" data-val="private" onclick="selectVisibility(this)">
-            🔒 Private
+            ðŸ”’ Private
           </div>
         </div>
       </div>
@@ -816,7 +816,7 @@
     </div>
   </main>
 
-  <!-- ── Right panel ── -->
+  <!-- â”€â”€ Right panel â”€â”€ -->
   <aside class="panel">
     <h2 class="panel-title">Upload Details</h2>
 
@@ -828,7 +828,7 @@
       </div>
       <div class="info-row">
         <span>Total size</span>
-        <span class="val" id="panelFileSize">—</span>
+        <span class="val" id="panelFileSize">â€”</span>
       </div>
       <div class="info-row">
         <span>Status</span>
@@ -849,7 +849,7 @@
           </div>
           <div class="recent-info">
             <div class="recent-name">Golden Hour Rooftop</div>
-            <div class="recent-meta">2 hrs ago · 4.2 MB</div>
+            <div class="recent-meta">2 hrs ago Â· 4.2 MB</div>
           </div>
           <span class="recent-status status-live">Live</span>
         </div>
@@ -859,7 +859,7 @@
           </div>
           <div class="recent-info">
             <div class="recent-name">City Fog Series #3</div>
-            <div class="recent-meta">Yesterday · 6.1 MB</div>
+            <div class="recent-meta">Yesterday Â· 6.1 MB</div>
           </div>
           <span class="recent-status status-draft">Draft</span>
         </div>
@@ -869,7 +869,7 @@
           </div>
           <div class="recent-info">
             <div class="recent-name">Thames at Dusk</div>
-            <div class="recent-meta">3 days ago · 5.7 MB</div>
+            <div class="recent-meta">3 days ago Â· 5.7 MB</div>
           </div>
           <span class="recent-status status-live">Live</span>
         </div>
@@ -881,12 +881,13 @@
 
 <!-- Toast -->
 <div id="toast">
-  <div class="toast-icon" id="toastIcon">✓</div>
+  <div class="toast-icon" id="toastIcon">âœ“</div>
   <span id="toastMsg">Done!</span>
 </div>
 
 <script>
-  /* ── File handling ── */
+  const API_BASE = 'https://pixogram-api-a3cydhaface7h0g5.swedencentral-01.azurewebsites.net/v1';
+  /* â”€â”€ File handling â”€â”€ */
   let selectedFiles = [];
   let visibility = 'public';
 
@@ -919,7 +920,7 @@
     const thumb = document.createElement('div');
     thumb.className = 'preview-thumb';
     thumb.dataset.idx = idx;
-    thumb.innerHTML = `<img src="${src}" alt="preview" /><button class="remove-btn" onclick="removeFile(event,${idx})">✕</button>`;
+    thumb.innerHTML = `<img src="${src}" alt="preview" /><button class="remove-btn" onclick="removeFile(event,${idx})">âœ•</button>`;
     strip.appendChild(thumb);
   }
 
@@ -934,7 +935,7 @@
     const valid = selectedFiles.filter(Boolean);
     document.getElementById('panelFileCount').textContent = valid.length;
     const totalBytes = valid.reduce((s, f) => s + f.size, 0);
-    document.getElementById('panelFileSize').textContent = totalBytes > 0 ? formatBytes(totalBytes) : '—';
+    document.getElementById('panelFileSize').textContent = totalBytes > 0 ? formatBytes(totalBytes) : 'â€”';
   }
 
   function formatBytes(b) {
@@ -943,7 +944,7 @@
     return (b/1048576).toFixed(1) + ' MB';
   }
 
-  /* ── Tags ── */
+  /* â”€â”€ Tags â”€â”€ */
   const tagInput = document.getElementById('tagInput');
   let tags = [];
 
@@ -963,7 +964,7 @@
     const chip = document.createElement('div');
     chip.className = 'tag-chip';
     chip.dataset.name = name;
-    chip.innerHTML = `${name}<button onclick="removeTag('${name}')">×</button>`;
+    chip.innerHTML = `${name}<button onclick="removeTag('${name}')">Ã—</button>`;
     document.getElementById('tagsWrap').insertBefore(chip, tagInput);
   }
 
@@ -973,19 +974,19 @@
     document.querySelectorAll('.tag-chip').forEach(c => { if (c.dataset.name === name) c.remove(); });
   }
 
-  /* ── Visibility ── */
+  /* â”€â”€ Visibility â”€â”€ */
   function selectVisibility(el) {
     document.querySelectorAll('.toggle-opt').forEach(o => o.classList.remove('selected'));
     el.classList.add('selected');
     visibility = el.dataset.val;
   }
 
-  /* ── Char counter ── */
+  /* â”€â”€ Char counter â”€â”€ */
   function updateCharCount(el, counterId, max) {
     document.getElementById(counterId).textContent = el.value.length;
   }
 
-  /* ── Publish ── */
+  /* â”€â”€ Publish â”€â”€ */
   function publishPhoto() {
     const title = document.getElementById('title').value.trim();
     const validFiles = selectedFiles.filter(Boolean);
@@ -995,8 +996,8 @@
 
     const btn = document.getElementById('publishBtn');
     btn.disabled = true;
-    btn.innerHTML = '<div class="spinner"></div> Publishing…';
-    document.getElementById('panelStatus').textContent = 'Uploading…';
+    btn.innerHTML = '<div class="spinner"></div> Publishingâ€¦';
+    document.getElementById('panelStatus').textContent = 'Uploadingâ€¦';
     document.getElementById('panelStatus').style.color = 'var(--accent)';
 
     // Simulated upload progress
@@ -1068,26 +1069,26 @@
     document.getElementById('progressFill').style.width = '0%';
     document.getElementById('progressPct').textContent = '0%';
     document.getElementById('panelFileCount').textContent = '0';
-    document.getElementById('panelFileSize').textContent = '—';
+    document.getElementById('panelFileSize').textContent = 'â€”';
     document.getElementById('panelStatus').textContent = 'Ready';
     document.getElementById('panelStatus').style.color = 'var(--accent)';
     showToast('Form cleared.', 'success');
   }
 
-  /* ── Toast ── */
+  /* â”€â”€ Toast â”€â”€ */
   let toastTimer;
   function showToast(msg, type = 'success') {
     const toast = document.getElementById('toast');
     const icon  = document.getElementById('toastIcon');
     document.getElementById('toastMsg').textContent = msg;
     icon.className = `toast-icon ${type}`;
-    icon.textContent = type === 'success' ? '✓' : '✕';
+    icon.textContent = type === 'success' ? 'âœ“' : 'âœ•';
     toast.classList.add('show');
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toast.classList.remove('show'), 3500);
   }
 
-  /* ── Init date ── */
+  /* â”€â”€ Init date â”€â”€ */
   document.getElementById('dateTaken').valueAsDate = new Date();
 </script>
 </body>
