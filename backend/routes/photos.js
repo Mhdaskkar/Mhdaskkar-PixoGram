@@ -228,7 +228,11 @@ router.post('/',
         console.log('[photos] cosmos.containers.Photos:', cosmos.containers.Photos);
      console.log('[photos] containers available:', JSON.stringify(Object.keys(cosmos.containers)));
       console.log('[photos] Photos container:', typeof cosmos.containers.Photos);
-      await cosmos.containers.Photos.items.create(photoDoc);
+      console.log('[photos] saving to cosmos...');
+      const photosContainer = cosmos.container('Photos');
+      console.log('[photos] container:', typeof photosContainer);
+      await photosContainer.items.create(photoDoc);
+      console.log('[photos] saved!');
 
       // 5. Invalidate feed cache
       await redis.deletePattern('feed:*');
@@ -369,4 +373,5 @@ function buildCountQuery({ q, location, tags, creatorId, minRating }) {
 }
 
 module.exports = router;
+
 

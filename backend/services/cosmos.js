@@ -93,7 +93,9 @@ async function initDatabase() {
 module.exports = {
   get cosmosClient() { return getClient(); },
   get containers()   { return getContainers(); },
+  container: (name) => getContainers()[name],
   deleteByPhotoId,
   initDatabase,
 };
+
 
