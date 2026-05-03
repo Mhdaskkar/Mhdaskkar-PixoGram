@@ -1,6 +1,6 @@
-/**
+﻿/**
  * Azure Cosmos DB Service
- * NoSQL — partitioned containers for photos, comments, ratings, users
+ * NoSQL â€” partitioned containers for photos, comments, ratings, users
  */
 const { CosmosClient } = require('@azure/cosmos');
 
@@ -35,7 +35,11 @@ function getContainers() {
     _containers = {
       Photos:   db.container('Photos'),    // partitionKey: /id
       Comments: db.container('Comments'),  // partitionKey: /photoId
-      Ratings:  db.container('Ratings'),   // partitionKey: /photoId
+      Ratings:  db.container('Ratings'),
+    };
+    console.log('[cosmos] containers keys:', Object.keys(_containers));
+    return _containers;
+  if (false) {   // partitionKey: /photoId
       Users:    db.container('Users'),     // partitionKey: /id
     };
   }
@@ -92,3 +96,4 @@ module.exports = {
   deleteByPhotoId,
   initDatabase,
 };
+

@@ -85,13 +85,13 @@ router.get('/',
       const offset = (page - 1) * limit;
       let querySpec = buildSearchQuery({ q, location, tags, creatorId, minRating, sort, offset, limit });
 
-      const { resources: photos, hasMoreResults } = await cosmos.containers.Photos
+      const { resources: photos, hasMoreResults } = await cosmos.containers.photos
         .items.query(querySpec, { maxItemCount: limit })
         .fetchNext();
 
       // Total count (lightweight query)
       const countSpec = buildCountQuery({ q, location, tags, creatorId, minRating });
-      const { resources: [countResult] } = await cosmos.containers.Photos
+      const { resources: [countResult] } = await cosmos.containers.photos
         .items.query(countSpec).fetchAll();
       const total = countResult?.count || 0;
 
@@ -132,7 +132,7 @@ router.get('/:id',
       const cached = await redis.get(cacheKey);
       if (cached) return res.json(JSON.parse(cached));
 
-      const { resource: photo } = await cosmos.containers.Photos.item(id, id).read();
+      const { resource: photo } = await cosmos.containers.photos.item(id, id).read();
       if (!photo) return res.status(404).json({ error: 'Photo not found' });
 
       await redis.setex(cacheKey, CACHE_TTL.photo, JSON.stringify(photo));
@@ -224,8 +224,11 @@ router.post('/',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-
-     await cosmos.containers.Photos.items.create(photoDoc);
+        console.log('[photos] cosmos.containers:', Object.keys(cosmos.containers));
+        console.log('[photos] cosmos.containers.Photos:', cosmos.containers.Photos);
+     console.log('[photos] containers available:', JSON.stringify(Object.keys(cosmos.containers)));
+      console.log('[photos] Photos container:', typeof cosmos.containers.Photos);
+      await cosmos.containers.Photos.items.create(photoDoc);
 
       // 5. Invalidate feed cache
       await redis.deletePattern('feed:*');
@@ -254,7 +257,7 @@ router.patch('/:id',
   async (req, res, next) => {
     try {
       const { id } = req.params;
-      const { resource: photo } = await cosmos.containers.Photos.item(id, id).read();
+      const { resource: photo } = await cosmos.containers.photos.item(id, id).read();
       if (!photo) return res.status(404).json({ error: 'Photo not found' });
       if (photo.creatorId !== req.user.id) return res.status(403).json({ error: 'Not the owner of this photo' });
 
@@ -264,7 +267,7 @@ router.patch('/:id',
       });
       photo.updatedAt = new Date().toISOString();
 
-      const { resource: updated } = await cosmos.containers.Photos.item(id, id).replace(photo);
+      const { resource: updated } = await cosmos.containers.photos.item(id, id).replace(photo);
 
       // Invalidate caches
       await redis.del(`photo:${id}`);
@@ -286,7 +289,7 @@ router.delete('/:id',
   async (req, res, next) => {
     try {
       const { id } = req.params;
-      const { resource: photo } = await cosmos.containers.Photos.item(id, id).read();
+      const { resource: photo } = await cosmos.containers.photos.item(id, id).read();
       if (!photo) return res.status(404).json({ error: 'Photo not found' });
       if (photo.creatorId !== req.user.id) return res.status(403).json({ error: 'Not the owner' });
 
@@ -299,7 +302,7 @@ router.delete('/:id',
       ]);
 
       // Delete Cosmos document
-      await cosmos.containers.Photos.item(id, id).delete();
+      await cosmos.containers.photos.item(id, id).delete();
 
       // Cascade delete: comments + ratings
       await cosmos.deleteByPhotoId('comments', id);
