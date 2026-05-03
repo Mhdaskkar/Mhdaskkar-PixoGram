@@ -425,41 +425,44 @@
     return s;
   }
 
-  function renderPhotos(photos) {
-    const grid = document.getElementById('photoGrid');
-    if (!photos.length) {
-      grid.innerHTML = `<div class="empty-state" style="column-span:all"><div class="icon">ðŸ”</div><h3>No photos found</h3><p>Try adjusting your search or filters.</p></div>`;
-      document.getElementById('resultCount').textContent = '0 results';
-      return;
-    }
-    document.getElementById('resultCount').textContent = `${photos.length} photo${photos.length!==1?'s':''}`;
-    grid.innerHTML = photos.map(p => `
-      <div class="photo-card" onclick="openPhotoModal('${p.id}')">
-        <div class="photo-img-wrap">
-          <div class="photo-placeholder" style="height:${p.height}px;background:linear-gradient(135deg,${p.color}cc,${p.color}44);justify-content:center;font-size:${p.height/5}px;opacity:.6">ðŸ“·</div>
-          <div class="photo-overlay">
-            <div class="photo-overlay-inner">
-              <span class="overlay-action">View</span>
-              <span class="overlay-action">â­ Rate</span>
-            </div>
+function renderPhotos(photos) {
+  const grid = document.getElementById('photoGrid');
+  if (!photos.length) {
+    grid.innerHTML = `<div class="empty-state" style="column-span:all"><div class="icon">🔍</div><h3>No photos found</h3><p>Try adjusting your search or filters.</p></div>`;
+    document.getElementById('resultCount').textContent = '0 results';
+    return;
+  }
+  document.getElementById('resultCount').textContent = `${photos.length} photo${photos.length!==1?'s':''}`;
+  grid.innerHTML = photos.map(p => `
+    <div class="photo-card" onclick="openPhotoModal('${p.id}')">
+      <div class="photo-img-wrap">
+        ${p.thumbUrl
+          ? `<img src="${p.thumbUrl}" style="width:100%;height:${p.height||220}px;object-fit:cover;" onerror="this.style.display='none'" />`
+          : `<div class="photo-placeholder" style="height:${p.height||220}px;background:linear-gradient(135deg,#2a2018,#1a1410);display:flex;align-items:center;justify-content:center;font-size:3rem;opacity:.6">📷</div>`
+        }
+        <div class="photo-overlay">
+          <div class="photo-overlay-inner">
+            <span class="overlay-action">View</span>
+            <span class="overlay-action">⭐ Rate</span>
           </div>
-        </div>
-        <div class="photo-info">
-          <h4>${p.title}</h4>
-          <div class="photo-meta">
-            <span class="photo-creator">by ${p.creator}</span>
-            <div class="photo-stats">
-              <span class="stars">${starsHTML(p.rating)}</span>
-              <span class="rating-val">${p.rating.toFixed(1)}</span>
-              <span class="comment-ct">ðŸ’¬ ${p.commentCount}</span>
-            </div>
-          </div>
-          ${p.location ? `<div class="photo-location">ðŸ“ ${p.location}</div>` : ''}
-          <div class="photo-tags">${p.tags.map(t=>`<span class="tag">${t}</span>`).join('')}</div>
         </div>
       </div>
-    `).join('');
-  }
+      <div class="photo-info">
+        <h4>${p.title}</h4>
+        <div class="photo-meta">
+          <span class="photo-creator">by ${p.creator || 'Unknown'}</span>
+          <div class="photo-stats">
+            <span class="stars">${starsHTML(p.rating||0)}</span>
+            <span class="rating-val">${(p.rating||0).toFixed(1)}</span>
+            <span class="comment-ct">💬 ${p.commentCount||0}</span>
+          </div>
+        </div>
+        ${p.location ? `<div class="photo-location">📍 ${p.location}</div>` : ''}
+        <div class="photo-tags">${(p.tags||[]).map(t=>`<span class="tag">${t}</span>`).join('')}</div>
+      </div>
+    </div>
+  `).join('');
+}
 
   function loadPhotos() {
     const q = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -602,3 +605,5 @@
 </script>
 </body>
 </html>
+
+

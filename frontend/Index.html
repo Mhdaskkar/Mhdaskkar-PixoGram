@@ -556,7 +556,6 @@
 <div class="toast" id="toast"></div>
 
 <script>
-  // â”€â”€ MODAL â”€â”€
   function openModal(tab) {
     document.getElementById('authModal').classList.add('active');
     switchTab(tab || 'login');
@@ -576,7 +575,6 @@
     if (e.target === document.getElementById('authModal')) closeModal();
   });
 
-  // â”€â”€ TOAST â”€â”€
   function showToast(msg, type='success') {
     const t = document.getElementById('toast');
     t.textContent = msg;
@@ -584,31 +582,26 @@
     setTimeout(() => t.className = 'toast', 3000);
   }
 
-  // â”€â”€ AUTH (demo â€” in production use MSAL.js + AAD B2C) â”€â”€
-  const API_BASE = 'https://pixogram-api-a3cydhaface7h0g5.swedencentral-01.azurewebsites.net/v1'; // Replace with actual API URL
+  const API_BASE = 'https://pixogram-api-a3cydhaface7h0g5.swedencentral-01.azurewebsites.net/v1';
 
   async function handleLogin() {
     const email = document.getElementById('loginEmail').value.trim();
     const password = document.getElementById('loginPassword').value;
     if (!email || !password) { showToast('Please fill in all fields.', 'error'); return; }
-
-    // Demo: simulate login
-    // In production: call AAD B2C token endpoint or use MSAL.js
     try {
-      // const res = await fetch(`${API_BASE}/auth/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({email,password}) });
-      // const data = await res.json();
-      // if (!res.ok) throw new Error(data.message || 'Login failed');
-      // localStorage.setItem('token', data.token);
-      // localStorage.setItem('role', data.role);
-
-      // DEMO routing
-      const role = email.includes('creator') ? 'creator' : 'consumer';
-      localStorage.setItem('Pixogram_token', 'demo_jwt_' + Date.now());
-      localStorage.setItem('Pixogram_role', role);
-      localStorage.setItem('Pixogram_name', email.split('@')[0]);
-      showToast('Signed in! Redirectingâ€¦', 'success');
+      const res = await fetch(API_BASE + '/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Login failed');
+      localStorage.setItem('Pixogram_token', data.token);
+      localStorage.setItem('Pixogram_role', data.user.role);
+      localStorage.setItem('Pixogram_name', data.user.displayName);
+      showToast('Signed in! Redirecting...', 'success');
       setTimeout(() => {
-        window.location.href = role === 'creator' ? 'creator.html' : 'consumer.html';
+        window.location.href = data.user.role === 'creator' ? 'creator.html' : 'consumer.html';
       }, 900);
     } catch(e) {
       showToast(e.message || 'Login failed', 'error');
@@ -621,28 +614,28 @@
     const password = document.getElementById('regPassword').value;
     if (!name || !email || !password) { showToast('Please fill in all fields.', 'error'); return; }
     if (password.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
-
-    // DEMO
-    localStorage.setItem('Pixogram_token', 'demo_jwt_' + Date.now());
-    localStorage.setItem('Pixogram_role', 'consumer');
-    localStorage.setItem('Pixogram_name', name);
-    showToast('Account created! Welcome to Pixogram.', 'success');
-    setTimeout(() => window.location.href = 'consumer.html', 1000);
+    try {
+      const res = await fetch(API_BASE + '/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, displayName: name, role: 'consumer' })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Registration failed');
+      localStorage.setItem('Pixogram_token', data.token);
+      localStorage.setItem('Pixogram_role', data.user.role);
+      localStorage.setItem('Pixogram_name', data.user.displayName);
+      showToast('Account created! Welcome to Pixogram.', 'success');
+      setTimeout(() => window.location.href = 'consumer.html', 1000);
+    } catch(e) {
+      showToast(e.message || 'Registration failed', 'error');
+    }
   }
 
   function handleAzureLogin() {
-    // In production: msalInstance.loginRedirect(loginRequest)
-    showToast('Redirecting to Microsoft Sign-Inâ€¦', 'success');
-    setTimeout(() => {
-      // Simulate: set demo token, redirect to consumer
-      localStorage.setItem('Pixogram_token', 'msal_demo_' + Date.now());
-      localStorage.setItem('Pixogram_role', 'consumer');
-      localStorage.setItem('Pixogram_name', 'Microsoft User');
-      window.location.href = 'consumer.html';
-    }, 1200);
+    showToast('Microsoft login not configured.', 'error');
   }
 
-  // Auto-redirect if already logged in
   if (localStorage.getItem('Pixogram_token')) {
     const role = localStorage.getItem('Pixogram_role');
     if (role === 'creator') window.location.href = 'creator.html';
@@ -651,3 +644,4 @@
 </script>
 </body>
 </html>
+

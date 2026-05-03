@@ -1,14 +1,14 @@
-/** photo
+﻿/** photo
  * Photos Router
- * GET    /v1/photos          — list/search (public)
- * GET    /v1/photos/:id      — single photo (public)
- * POST   /v1/photos          — upload (creator only)
- * PATCH  /v1/photos/:id      — update metadata (creator, owner)
- * DELETE /v1/photos/:id      — delete (creator, owner)
+ * GET    /v1/photos          â€” list/search (public)
+ * GET    /v1/photos/:id      â€” single photo (public)
+ * POST   /v1/photos          â€” upload (creator only)
+ * PATCH  /v1/photos/:id      â€” update metadata (creator, owner)
+ * DELETE /v1/photos/:id      â€” delete (creator, owner)
  */
 const express  = require('express');
 const multer   = require('multer');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 const { body, query, param, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 
@@ -21,7 +21,7 @@ const redis   = require('../services/redis');
 const vision  = require('../services/vision');
 const { generateThumbnail } = require('../utils/thumbnail');
 
-// ── MULTER (in-memory storage, then stream to Azure Blob) ──
+// â”€â”€ MULTER (in-memory storage, then stream to Azure Blob) â”€â”€
 const storage = multer.memoryStorage();
 const upload  = multer({
   storage,
@@ -41,7 +41,7 @@ const uploadLimiter = rateLimit({
   message: { error: 'Upload limit (20/hour) reached.' },
 });
 
-// ── HELPERS ──
+// â”€â”€ HELPERS â”€â”€
 const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
@@ -54,9 +54,9 @@ const CACHE_TTL = {
   photo:  600,  // 10 min
 };
 
-// ────────────────────────────────────────────────────
-// GET /v1/photos — list / search
-// ────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GET /v1/photos â€” list / search
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 router.get('/',
   optionalAuth, attachUserInfo,
   [
@@ -118,9 +118,9 @@ router.get('/',
   }
 );
 
-// ────────────────────────────────────────────────────
-// GET /v1/photos/:id — single photo
-// ────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GET /v1/photos/:id â€” single photo
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 router.get('/:id',
   [param('id').isUUID()], validate,
   optionalAuth, attachUserInfo,
@@ -143,9 +143,9 @@ router.get('/:id',
   }
 );
 
-// ────────────────────────────────────────────────────
-// POST /v1/photos — upload photo (creator only)
-// ────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// POST /v1/photos â€” upload photo (creator only)
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 router.post('/',
   requireAuth, attachUserInfo, isCreator,
   uploadLimiter,
@@ -162,7 +162,7 @@ router.post('/',
     try {
       if (!req.file) return res.status(400).json({ error: 'Image file required' });
 
-      const photoId = uuidv4();
+      const photoId = randomUUID();
       const { title, caption='', location='', tags='', peoplePresent='' } = req.body;
 
       const tagList = tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
@@ -179,7 +179,7 @@ router.post('/',
       const thumbName   = `thumbnails/${photoId}.jpg`;
       const thumbUrl    = await blob.uploadBuffer(thumbName, thumbBuffer, 'image/jpeg');
 
-      // 3. Azure Cognitive Services — content moderation + auto-tags
+      // 3. Azure Cognitive Services â€” content moderation + auto-tags
       let aiTags = [];
       let moderationPassed = true;
       try {
@@ -232,9 +232,9 @@ router.post('/',
   }
 );
 
-// ────────────────────────────────────────────────────
-// PATCH /v1/photos/:id — update metadata
-// ────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// PATCH /v1/photos/:id â€” update metadata
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 router.patch('/:id',
   requireAuth, attachUserInfo, isCreator,
   [
@@ -272,9 +272,9 @@ router.patch('/:id',
   }
 );
 
-// ────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // DELETE /v1/photos/:id
-// ────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 router.delete('/:id',
   requireAuth, attachUserInfo, isCreator,
   [param('id').isUUID()], validate,
@@ -311,7 +311,7 @@ router.delete('/:id',
   }
 );
 
-// ── HELPERS ──
+// â”€â”€ HELPERS â”€â”€
 function getExt(mimetype) {
   return { 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp' }[mimetype] || '.jpg';
 }
