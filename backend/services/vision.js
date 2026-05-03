@@ -2,7 +2,8 @@
  * Azure Computer Vision Service
  * Uses @azure/ai-vision-image-analysis SDK
  */
-const { ImageAnalysisClient } = require('@azure-rest/ai-vision-image-analysis');
+const createClient = require('@azure-rest/ai-vision-image-analysis').default 
+  || require('@azure-rest/ai-vision-image-analysis');
 const { AzureKeyCredential } = require('@azure/core-auth');
 
 const VISION_KEY      = process.env.VISION_KEY;
@@ -12,13 +13,8 @@ let _client;
 
 function getClient() {
   if (!_client) {
-    if (!VISION_KEY) {
-      throw new Error('VISION_KEY environment variable not set');
-    }
-    _client = new ImageAnalysisClient(
-      VISION_ENDPOINT,
-      new AzureKeyCredential(VISION_KEY)
-    );
+    if (!VISION_KEY) throw new Error('VISION_KEY not set');
+    _client = createClient(VISION_ENDPOINT, new AzureKeyCredential(VISION_KEY));
   }
   return _client;
 }
