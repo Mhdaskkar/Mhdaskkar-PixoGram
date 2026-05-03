@@ -225,7 +225,7 @@ router.post('/',
         updatedAt: new Date().toISOString(),
       };
 
-      await cosmos.containers.photos.items.create(photoDoc);
+     await cosmos.containers.Photos.items.create(photoDoc);
 
       // 5. Invalidate feed cache
       await redis.deletePattern('feed:*');
