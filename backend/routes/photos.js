@@ -313,4 +313,4 @@ function buildCountQuery({ q, location, tags, creatorId, minRating }) {
   return { query: countQ, parameters };
 }
 
-module.exports = router;
+module.exports = router;// redeploy 05/03/2026 12:09:25
