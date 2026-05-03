@@ -1,11 +1,8 @@
 /**
  * Comments Router
- * GET    /v1/photos/:photoId/comments  — list comments (public)
- * POST   /v1/photos/:photoId/comments  — add comment (authenticated)
- * DELETE /v1/comments/:id              — delete comment (owner)
  */
 const express = require('express');
-const { v4: uuidv4 } = require('uuid');
+const { randomUUID } = require('crypto');
 const { body, param, query, validationResult } = require('express-validator');
 
 const router = express.Router();
@@ -38,7 +35,7 @@ router.get('/:photoId/comments',
       const cached = await redis.get(cacheKey);
       if (cached) return res.json(JSON.parse(cached));
 
-      const { resources: comments } = await cosmos.containers.comments.items.query({
+      const { resources: comments } = await cosmos.container('Comments').items.query({
         query: `SELECT * FROM c WHERE c.photoId = @photoId ORDER BY c.createdAt DESC OFFSET ${offset} LIMIT ${limit}`,
         parameters: [{ name:'@photoId', value: photoId }],
       }).fetchAll();
@@ -63,27 +60,24 @@ router.post('/:photoId/comments',
       const { photoId } = req.params;
       const { text } = req.body;
 
-      // Verify photo exists
-      const { resource: photo } = await cosmos.containers.photos.item(photoId, photoId).read();
+      const { resource: photo } = await cosmos.container('Photos').item(photoId, photoId).read();
       if (!photo) return res.status(404).json({ error: 'Photo not found' });
 
       const comment = {
-        id:          uuidv4(),
+        id:          randomUUID(),
         photoId,
         userId:      req.user.id,
-        displayName: req.user.displayName,
+        userName:    req.user.displayName,
         text,
         createdAt:   new Date().toISOString(),
       };
 
-      await cosmos.containers.comments.items.create(comment);
+      await cosmos.container('Comments').items.create(comment);
 
-      // Increment commentCount on photo
       photo.commentCount = (photo.commentCount || 0) + 1;
       photo.updatedAt = new Date().toISOString();
-      await cosmos.containers.photos.item(photoId, photoId).replace(photo);
+      await cosmos.container('Photos').item(photoId, photoId).replace(photo);
 
-      // Invalidate caches
       await redis.deletePattern(`comments:${photoId}:*`);
       await redis.del(`photo:${photoId}`);
 
@@ -100,8 +94,7 @@ router.delete('/comments/:id',
     try {
       const { id } = req.params;
 
-      // Find comment (need photoId for partition key)
-      const { resources } = await cosmos.containers.comments.items.query({
+      const { resources } = await cosmos.container('Comments').items.query({
         query: 'SELECT * FROM c WHERE c.id = @id',
         parameters: [{ name:'@id', value: id }],
       }).fetchAll();
@@ -110,15 +103,14 @@ router.delete('/comments/:id',
       if (!comment) return res.status(404).json({ error: 'Comment not found' });
       if (comment.userId !== req.user.id) return res.status(403).json({ error: 'Not your comment' });
 
-      await cosmos.containers.comments.item(id, comment.photoId).delete();
+      await cosmos.container('Comments').item(id, comment.photoId).delete();
 
-      // Decrement commentCount on photo
       try {
-        const { resource: photo } = await cosmos.containers.photos.item(comment.photoId, comment.photoId).read();
+        const { resource: photo } = await cosmos.container('Photos').item(comment.photoId, comment.photoId).read();
         if (photo) {
           photo.commentCount = Math.max(0, (photo.commentCount || 1) - 1);
           photo.updatedAt = new Date().toISOString();
-          await cosmos.containers.photos.item(comment.photoId, comment.photoId).replace(photo);
+          await cosmos.container('Photos').item(comment.photoId, comment.photoId).replace(photo);
           await redis.del(`photo:${comment.photoId}`);
         }
       } catch { /* non-critical */ }

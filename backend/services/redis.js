@@ -1,32 +1,37 @@
 ﻿/**
  * Azure Cache for Redis Service
- * Wraps ioredis with helper methods used across the API
  */
 const Redis = require('ioredis');
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const REDIS_HOST     = process.env.REDIS_HOST     || 'localhost';
+const REDIS_PORT     = process.env.REDIS_PORT     || 6379;
+const REDIS_PASSWORD = process.env.REDIS_PASSWORD || null;
+const IS_PROD        = process.env.NODE_ENV === 'production';
 
 let _client;
 
 function getClient() {
   if (!_client) {
-    _client = new Redis(REDIS_URL, {
-      tls: process.env.NODE_ENV === 'production' ? {} : undefined,
-      password: process.env.REDIS_PASSWORD,
+    _client = new Redis({
+      host:     REDIS_HOST,
+      port:     parseInt(REDIS_PORT),
+      password: REDIS_PASSWORD,
+      tls:      IS_PROD ? {} : undefined,
       retryStrategy: (times) => {
-        if (times > 3) return null; // Stop retrying after 3 attempts
+        if (times > 3) return null;
         return Math.min(times * 200, 1000);
       },
-      lazyConnect: true,
+      lazyConnect:        true,
       enableOfflineQueue: false,
     });
 
     _client.on('error', (err) => {
-      // Log but don't crash â€” app can function without cache (degraded)
       if (process.env.NODE_ENV !== 'test') {
         console.warn('Redis error (non-fatal):', err.message);
       }
     });
+
+    console.log('[redis] Connecting to:', REDIS_HOST + ':' + REDIS_PORT);
   }
   return _client;
 }
@@ -34,6 +39,16 @@ function getClient() {
 async function get(key) {
   try { return await getClient().get(key); }
   catch { return null; }
+}
+
+async function set(key, value, exFlag, ttl) {
+  try {
+    if (exFlag === 'EX' && ttl) {
+      await getClient().setex(key, ttl, value);
+    } else {
+      await getClient().set(key, value);
+    }
+  } catch { /* non-fatal */ }
 }
 
 async function setex(key, ttl, value) {
@@ -50,10 +65,6 @@ async function ping() {
   return getClient().ping();
 }
 
-/**
- * Delete all keys matching a glob pattern (e.g. 'feed:*')
- * Uses SCAN to avoid blocking the server
- */
 async function deletePattern(pattern) {
   try {
     const client = getClient();
@@ -66,13 +77,4 @@ async function deletePattern(pattern) {
   } catch { /* non-fatal */ }
 }
 
-async function set(key, value, exFlag, ttl) {
-  try {
-    if (exFlag === 'EX' && ttl) {
-      await getClient().setex(key, ttl, value);
-    } else {
-      await getClient().set(key, value);
-    }
-  } catch { /* non-fatal */ }
-}
 module.exports = { get, set, setex, del, ping, deletePattern, getClient };
