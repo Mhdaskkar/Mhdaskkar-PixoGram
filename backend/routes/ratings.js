@@ -2,7 +2,6 @@
  * Ratings Router
  */
 const express = require('express');
-const { randomUUID } = require('crypto');
 const { body, param, validationResult } = require('express-validator');
 
 const router = express.Router();
@@ -15,6 +14,14 @@ const validate = (req, res, next) => {
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
   next();
 };
+
+// helper — find photo by id
+async function findPhotoById(id) {
+  const { resources } = await cosmos.container('Photos').items
+    .query({ query: 'SELECT * FROM c WHERE c.id = @id', parameters: [{ name: '@id', value: id }] })
+    .fetchAll();
+  return resources[0] || null;
+}
 
 // POST /v1/photos/:photoId/ratings
 router.post('/:photoId/ratings',
@@ -31,7 +38,7 @@ router.post('/:photoId/ratings',
       const userId = req.user.id;
       const ratingId = `${userId}_${photoId}`;
 
-      const { resource: photo } = await cosmos.container('Photos').item(photoId, photoId).read();
+      const photo = await findPhotoById(photoId);
       if (!photo) return res.status(404).json({ error: 'Photo not found' });
 
       let existing = null;
@@ -60,7 +67,7 @@ router.post('/:photoId/ratings',
 
       photo.averageRating = Math.round(photo.averageRating * 10) / 10;
       photo.updatedAt = now;
-      await cosmos.container('Photos').item(photoId, photoId).replace(photo);
+      await cosmos.container('Photos').item(photoId, photo.creatorId).replace(photo);
 
       await redis.del(`photo:${photoId}`);
       await redis.deletePattern('feed:*');

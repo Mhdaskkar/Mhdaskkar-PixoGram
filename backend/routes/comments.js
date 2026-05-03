@@ -16,6 +16,14 @@ const validate = (req, res, next) => {
   next();
 };
 
+// helper — find photo by id
+async function findPhotoById(id) {
+  const { resources } = await cosmos.container('Photos').items
+    .query({ query: 'SELECT * FROM c WHERE c.id = @id', parameters: [{ name: '@id', value: id }] })
+    .fetchAll();
+  return resources[0] || null;
+}
+
 // GET /v1/photos/:photoId/comments
 router.get('/:photoId/comments',
   [
@@ -60,23 +68,23 @@ router.post('/:photoId/comments',
       const { photoId } = req.params;
       const { text } = req.body;
 
-      const { resource: photo } = await cosmos.container('Photos').item(photoId, photoId).read();
+      const photo = await findPhotoById(photoId);
       if (!photo) return res.status(404).json({ error: 'Photo not found' });
 
       const comment = {
-        id:          randomUUID(),
+        id:        randomUUID(),
         photoId,
-        userId:      req.user.id,
-        userName:    req.user.displayName,
+        userId:    req.user.id,
+        userName:  req.user.displayName,
         text,
-        createdAt:   new Date().toISOString(),
+        createdAt: new Date().toISOString(),
       };
 
       await cosmos.container('Comments').items.create(comment);
 
       photo.commentCount = (photo.commentCount || 0) + 1;
       photo.updatedAt = new Date().toISOString();
-      await cosmos.container('Photos').item(photoId, photoId).replace(photo);
+      await cosmos.container('Photos').item(photoId, photo.creatorId).replace(photo);
 
       await redis.deletePattern(`comments:${photoId}:*`);
       await redis.del(`photo:${photoId}`);
@@ -106,11 +114,11 @@ router.delete('/comments/:id',
       await cosmos.container('Comments').item(id, comment.photoId).delete();
 
       try {
-        const { resource: photo } = await cosmos.container('Photos').item(comment.photoId, comment.photoId).read();
+        const photo = await findPhotoById(comment.photoId);
         if (photo) {
           photo.commentCount = Math.max(0, (photo.commentCount || 1) - 1);
           photo.updatedAt = new Date().toISOString();
-          await cosmos.container('Photos').item(comment.photoId, comment.photoId).replace(photo);
+          await cosmos.container('Photos').item(comment.photoId, photo.creatorId).replace(photo);
           await redis.del(`photo:${comment.photoId}`);
         }
       } catch { /* non-critical */ }
