@@ -38,6 +38,14 @@ const validate = (req, res, next) => {
 
 const CACHE_TTL = { feed: 300, search: 120, photo: 600 };
 
+// helper — find photo by id using query (partition key is creatorId)
+async function findPhotoById(id) {
+  const { resources } = await cosmos.container('Photos').items
+    .query({ query: 'SELECT * FROM c WHERE c.id = @id', parameters: [{ name: '@id', value: id }] })
+    .fetchAll();
+  return resources[0] || null;
+}
+
 // ── GET /v1/photos ──────────────────────────────────────────────────────────
 router.get('/',
   optionalAuth, attachUserInfo,
@@ -99,7 +107,7 @@ router.get('/:id',
       const cached = await redis.get(cacheKey);
       if (cached) return res.json(JSON.parse(cached));
 
-      const { resource: photo } = await cosmos.container('Photos').item(id, id).read();
+      const photo = await findPhotoById(id);
       if (!photo) return res.status(404).json({ error: 'Photo not found' });
 
       await redis.setex(cacheKey, CACHE_TTL.photo, JSON.stringify(photo));
@@ -136,15 +144,12 @@ router.post('/',
         ? peoplePresent.split(',').map(p => p.trim()).filter(Boolean)
         : (Array.isArray(peoplePresent) ? peoplePresent : []);
 
-      // 1. Upload to Azure Blob
       const blobName = `originals/${photoId}${getExt(req.file.mimetype)}`;
       const blobUrl  = await blob.uploadBuffer(blobName, req.file.buffer, req.file.mimetype);
 
-      // 2. Upload thumbnail
       const thumbName = `thumbnails/${photoId}${getExt(req.file.mimetype)}`;
       const thumbUrl  = await blob.uploadBuffer(thumbName, req.file.buffer, req.file.mimetype);
 
-      // 3. Vision API (optional)
       let aiTags = [];
       try {
         const visionResult = await vision.analyzeImage(blobUrl);
@@ -161,9 +166,8 @@ router.post('/',
 
       const allTags = [...new Set([...tagList, ...aiTags.map(t => t.name)])].slice(0, 20);
 
-      // 4. Save to Cosmos DB
       const photoDoc = {
-        id: photoId,
+        id:          photoId,
         creatorId:   req.user.id,
         creatorName: req.user.displayName,
         title,
@@ -175,17 +179,13 @@ router.post('/',
         thumbUrl,
         contentModerationPassed: true,
         averageRating: 0,
-        ratingCount: 0,
-        commentCount: 0,
+        ratingCount:   0,
+        commentCount:  0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
 
-      console.log('[photos] Saving to Cosmos...');
       await cosmos.container('Photos').items.create(photoDoc);
-      console.log('[photos] Saved successfully!');
-
-      // 5. Invalidate feed cache
       await redis.deletePattern('feed:*');
 
       res.status(201).json(photoDoc);
@@ -210,7 +210,7 @@ router.patch('/:id',
   async (req, res, next) => {
     try {
       const { id } = req.params;
-      const { resource: photo } = await cosmos.container('Photos').item(id, id).read();
+      const photo = await findPhotoById(id);
       if (!photo) return res.status(404).json({ error: 'Photo not found' });
       if (photo.creatorId !== req.user.id) return res.status(403).json({ error: 'Not the owner of this photo' });
 
@@ -220,7 +220,7 @@ router.patch('/:id',
       });
       photo.updatedAt = new Date().toISOString();
 
-      const { resource: updated } = await cosmos.container('Photos').item(id, id).replace(photo);
+      const { resource: updated } = await cosmos.container('Photos').item(id, photo.creatorId).replace(photo);
 
       await redis.del(`photo:${id}`);
       await redis.deletePattern('feed:*');
@@ -239,7 +239,7 @@ router.delete('/:id',
   async (req, res, next) => {
     try {
       const { id } = req.params;
-      const { resource: photo } = await cosmos.container('Photos').item(id, id).read();
+      const photo = await findPhotoById(id);
       if (!photo) return res.status(404).json({ error: 'Photo not found' });
       if (photo.creatorId !== req.user.id) return res.status(403).json({ error: 'Not the owner' });
 
@@ -250,7 +250,7 @@ router.delete('/:id',
         blob.deleteBlob(thumbName),
       ]);
 
-      await cosmos.container('Photos').item(id, id).delete();
+      await cosmos.container('Photos').item(id, photo.creatorId).delete();
       await cosmos.deleteByPhotoId('Comments', id);
       await cosmos.deleteByPhotoId('Ratings', id);
 
